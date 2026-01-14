@@ -1,0 +1,280 @@
+import axios, { AxiosError } from 'axios';
+import type {
+  AuthResponse,
+  Category,
+  Conversation,
+  CreateListingData,
+  Listing,
+  LoginRequest,
+  Message,
+  PaginatedResponse,
+  RegisterRequest,
+  TokenResponse,
+  UpdateProfileData,
+  User,
+  UserProfile,
+} from '@/types';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor for token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const { data } = await axios.post<{ access: string }>(
+            `${API_BASE_URL}/auth/token/refresh/`,
+            { refresh: refreshToken }
+          );
+          localStorage.setItem('access_token', data.access);
+          originalRequest.headers.Authorization = `Bearer ${data.access}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authAPI = {
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/register/', data);
+    return response.data;
+  },
+
+  login: async (data: LoginRequest): Promise<TokenResponse> => {
+    const response = await api.post<TokenResponse>('/auth/login/', data);
+    return response.data;
+  },
+
+  getCurrentUser: async (): Promise<User> => {
+    const response = await api.get<User>('/auth/user/');
+    return response.data;
+  },
+
+  sendVerificationEmail: async (): Promise<{ message: string; verification_token?: string }> => {
+    const response = await api.post('/auth/send-verification/');
+    return response.data;
+  },
+
+  verifyEmail: async (token: string): Promise<{ message: string; user: User }> => {
+    const response = await api.post('/auth/verify-email/', { token });
+    return response.data;
+  },
+};
+
+// Categories API
+export const categoriesAPI = {
+  list: async (): Promise<PaginatedResponse<Category>> => {
+    const response = await api.get<PaginatedResponse<Category>>('/categories/');
+    return response.data;
+  },
+
+  getBySlug: async (slug: string): Promise<Category> => {
+    const response = await api.get<Category>(`/categories/${slug}/`);
+    return response.data;
+  },
+};
+
+// Listings API
+export const listingsAPI = {
+  list: async (params?: {
+    search?: string;
+    category?: string;
+    status?: string;
+    condition?: string;
+    min_price?: number;
+    max_price?: number;
+    ordering?: string;
+    page?: number;
+  }): Promise<PaginatedResponse<Listing>> => {
+    const response = await api.get<PaginatedResponse<Listing>>('/listings/', { params });
+    return response.data;
+  },
+
+  get: async (id: number): Promise<Listing> => {
+    const response = await api.get<Listing>(`/listings/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateListingData): Promise<Listing> => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('price', data.price);
+    formData.append('condition', data.condition);
+    formData.append('category_id', data.category_id.toString());
+    formData.append('image', data.image);
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+
+    const response = await api.post<Listing>('/listings/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  update: async (id: number, data: Partial<CreateListingData>): Promise<Listing> => {
+    const formData = new FormData();
+    if (data.title) formData.append('title', data.title);
+    if (data.price) formData.append('price', data.price);
+    if (data.condition) formData.append('condition', data.condition);
+    if (data.category_id) formData.append('category_id', data.category_id.toString());
+    if (data.description) formData.append('description', data.description);
+    if (data.image) formData.append('image', data.image);
+
+    const response = await api.patch<Listing>(`/listings/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/listings/${id}/`);
+  },
+
+  markSold: async (id: number): Promise<Listing> => {
+    const response = await api.post<Listing>(`/listings/${id}/mark_sold/`);
+    return response.data;
+  },
+
+  markReserved: async (id: number): Promise<Listing> => {
+    const response = await api.post<Listing>(`/listings/${id}/mark_reserved/`);
+    return response.data;
+  },
+
+  markAvailable: async (id: number): Promise<Listing> => {
+    const response = await api.post<Listing>(`/listings/${id}/mark_available/`);
+    return response.data;
+  },
+
+  myListings: async (includeDeleted = false): Promise<PaginatedResponse<Listing>> => {
+    const response = await api.get<PaginatedResponse<Listing>>('/listings/my_listings/', {
+      params: { include_deleted: includeDeleted },
+    });
+    return response.data;
+  },
+
+  save: async (id: number): Promise<{ message: string; is_saved: boolean }> => {
+    const response = await api.post(`/listings/${id}/save_listing/`);
+    return response.data;
+  },
+
+  unsave: async (id: number): Promise<{ message: string; is_saved: boolean }> => {
+    const response = await api.post(`/listings/${id}/unsave_listing/`);
+    return response.data;
+  },
+
+  saved: async (): Promise<PaginatedResponse<{ id: number; listing: Listing; created_at: string }>> => {
+    const response = await api.get('/listings/saved/');
+    return response.data;
+  },
+};
+
+// Messages API
+export const messagesAPI = {
+  list: async (listingId?: number): Promise<PaginatedResponse<Message>> => {
+    const response = await api.get<PaginatedResponse<Message>>('/messages/', {
+      params: listingId ? { listing: listingId } : undefined,
+    });
+    return response.data;
+  },
+
+  send: async (listingId: number, content: string): Promise<Message> => {
+    const response = await api.post<Message>('/messages/', {
+      listing: listingId,
+      content,
+    });
+    return response.data;
+  },
+
+  conversations: async (): Promise<Conversation[]> => {
+    const response = await api.get<Conversation[]>('/messages/conversations/');
+    return response.data;
+  },
+
+  markRead: async (id: number): Promise<Message> => {
+    const response = await api.post<Message>(`/messages/${id}/mark_read/`);
+    return response.data;
+  },
+};
+
+// Profile API
+export const profileAPI = {
+  get: async (): Promise<UserProfile> => {
+    const response = await api.get<UserProfile>('/profiles/me/');
+    return response.data;
+  },
+
+  update: async (data: UpdateProfileData): Promise<UserProfile> => {
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.course) formData.append('course', data.course);
+    if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
+
+    const response = await api.patch<UserProfile>('/profiles/me/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+};
+
+// Saved Listings API
+export const savedListingsAPI = {
+  list: async (): Promise<any[]> => {
+    const response = await api.get('/listings/saved/');
+    return response.data.results || response.data;
+  },
+
+  remove: async (listingId: number): Promise<void> => {
+    await api.post(`/listings/${listingId}/unsave_listing/`);
+  },
+};
+
+// Reports API
+export const reportsAPI = {
+  create: async (listingId: number, reason: string, description?: string): Promise<any> => {
+    const response = await api.post('/reports/', {
+      listing: listingId,
+      reason,
+      description,
+    });
+    return response.data;
+  },
+};
+
+export default api;
