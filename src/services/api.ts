@@ -15,7 +15,14 @@ import type {
   UserProfile,
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// Ensure API URL uses HTTPS and has no trailing slash
+const getApiBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || '/api';
+  // Remove trailing slash if present
+  return url.replace(/\/$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
