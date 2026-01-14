@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Heart, Grid3x3, List } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { savedListingsAPI } from '@/services/api';
 import type { SavedListing } from '@/types';
 import ListingCard from '@/components/ListingCard';
@@ -9,7 +9,6 @@ import BottomNav from '@/components/BottomNav';
 import toast from 'react-hot-toast';
 
 export default function SavedListings() {
-  const navigate = useNavigate();
   const [savedListings, setSavedListings] = useState<SavedListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -27,16 +26,6 @@ export default function SavedListings() {
       toast.error('Failed to load saved listings');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleRemove = async (listingId: number) => {
-    try {
-      await savedListingsAPI.remove(listingId);
-      setSavedListings(prev => prev.filter(item => item.listing.id !== listingId));
-      toast.success('Removed from saved');
-    } catch (error: any) {
-      toast.error('Failed to remove');
     }
   };
 

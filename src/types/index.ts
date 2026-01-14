@@ -111,3 +111,9 @@ export interface UpdateProfileData {
   course?: string;
   profile_photo?: File;
 }
+
+export interface SavedListing {
+  id: number;
+  listing: Listing;
+  created_at: string;
+}

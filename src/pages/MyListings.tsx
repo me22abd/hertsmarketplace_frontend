@@ -5,7 +5,7 @@ import { listingsAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';
 import BottomNav from '@/components/BottomNav';
-import { formatPrice, getStatusLabel, getConditionLabel } from '@/utils/helpers';
+import { formatPrice, getStatusLabel } from '@/utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function MyListings() {
@@ -65,9 +65,9 @@ export default function MyListings() {
     }
   };
 
-  const activeListings = listings.filter(l => !l.is_deleted && l.status === 'available');
-  const soldListings = listings.filter(l => !l.is_deleted && l.status === 'sold');
-  const inactiveListings = listings.filter(l => l.is_deleted);
+  const activeListings = listings.filter(l => l.status === 'available');
+  const soldListings = listings.filter(l => l.status === 'sold');
+  const reservedListings = listings.filter(l => l.status === 'reserved');
 
   return (
     <div className="min-h-screen bg-white pb-20">
@@ -151,14 +151,14 @@ export default function MyListings() {
               </div>
             )}
 
-            {/* Inactive Listings */}
-            {inactiveListings.length > 0 && (
+            {/* Reserved Listings */}
+            {reservedListings.length > 0 && (
               <div>
                 <h2 className="text-lg font-bold text-gray-900 mb-3">
-                  Inactive ({inactiveListings.length})
+                  Reserved ({reservedListings.length})
                 </h2>
                 <div className="space-y-3">
-                  {inactiveListings.map((listing) => (
+                  {reservedListings.map((listing) => (
                     <ListingItem
                       key={listing.id}
                       listing={listing}
@@ -191,34 +191,30 @@ export default function MyListings() {
                   <Eye size={20} className="text-gray-700" />
                   <span className="text-gray-900">View Listing</span>
                 </button>
-                {!selectedListing.is_deleted && (
-                  <>
-                    <button
-                      onClick={() => handleStatusChange(selectedListing, 'available')}
-                      disabled={selectedListing.status === 'available'}
-                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      <span className="text-gray-900">Mark as Available</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(selectedListing, 'reserved')}
-                      disabled={selectedListing.status === 'reserved'}
-                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                      <span className="text-gray-900">Mark as Reserved</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(selectedListing, 'sold')}
-                      disabled={selectedListing.status === 'sold'}
-                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                      <span className="text-gray-900">Mark as Sold</span>
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={() => handleStatusChange(selectedListing, 'available')}
+                  disabled={selectedListing.status === 'available'}
+                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
+                >
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-900">Mark as Available</span>
+                </button>
+                <button
+                  onClick={() => handleStatusChange(selectedListing, 'reserved')}
+                  disabled={selectedListing.status === 'reserved'}
+                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
+                >
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-gray-900">Mark as Reserved</span>
+                </button>
+                <button
+                  onClick={() => handleStatusChange(selectedListing, 'sold')}
+                  disabled={selectedListing.status === 'sold'}
+                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
+                >
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-gray-900">Mark as Sold</span>
+                </button>
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -308,11 +304,6 @@ function ListingItem({ listing, onMenuClick }: { listing: Listing; onMenuClick: 
             >
               {getStatusLabel(listing.status)}
             </span>
-            {listing.is_deleted && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                Deleted
-              </span>
-            )}
           </div>
         </div>
       </div>
