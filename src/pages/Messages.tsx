@@ -29,8 +29,17 @@ export default function Messages() {
       // Create a pseudo-conversation for the new chat
       const newConversation: Conversation = {
         listing,
-        other_user: listing.seller_profile!,
-        last_message: null,
+        other_user: listing.seller,
+        last_message: {
+          id: 0,
+          listing: listing.id,
+          listing_title: listing.title,
+          sender: listing.seller,
+          recipient: user!,
+          content: '',
+          is_read: true,
+          created_at: new Date().toISOString(),
+        },
         unread_count: 0,
       };
       setSelectedConversation(newConversation);
@@ -122,12 +131,12 @@ export default function Messages() {
                   className="w-full px-4 py-4 flex items-start gap-3 active:bg-gray-50 transition-colors"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">
-                    {getInitials(conversation.other_user.name)}
+                    {getInitials(conversation.other_user.profile.name)}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-semibold text-gray-900 truncate">
-                        {conversation.other_user.name}
+                        {conversation.other_user.profile.name}
                       </h3>
                       {conversation.last_message && (
                         <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
@@ -172,14 +181,14 @@ export default function Messages() {
                 <ArrowLeft size={24} className="text-gray-900" />
               </button>
               <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm">
-                {getInitials(selectedConversation.other_user.name)}
+                {getInitials(selectedConversation.other_user.profile.name)}
               </div>
               <div>
                 <h2 className="font-semibold text-gray-900">
-                  {selectedConversation.other_user.name}
+                  {selectedConversation.other_user.profile.name}
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {selectedConversation.other_user.course || 'University of Hertfordshire'}
+                  {selectedConversation.other_user.profile.course || 'University of Hertfordshire'}
                 </p>
               </div>
             </div>

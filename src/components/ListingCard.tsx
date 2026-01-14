@@ -1,7 +1,6 @@
 import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Listing } from '@/types';
-import { formatRelativeTime, getStatusColor, getStatusLabel } from '@/utils/helpers';
 import { useState } from 'react';
 import { listingsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
@@ -101,8 +100,8 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
           </div>
 
           {/* Seller/Category */}
-          {listing.seller_profile?.name && (
-            <p className="text-xs text-gray-500 mb-1 truncate">{listing.seller_profile.name}</p>
+          {listing.seller?.profile?.name && (
+            <p className="text-xs text-gray-500 mb-1 truncate">{listing.seller.profile.name}</p>
           )}
 
           {/* Title */}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, MoreVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, Trash2, Eye } from 'lucide-react';
 import { listingsAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';

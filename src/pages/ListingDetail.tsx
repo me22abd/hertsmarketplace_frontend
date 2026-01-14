@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Star, ChevronRight, X, Check } from 'lucide-react';
-import { listingsAPI, messagesAPI } from '@/services/api';
+import { listingsAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';
 import { useAuthStore } from '@/store/authStore';
@@ -9,7 +9,6 @@ import {
   formatPrice,
   formatRelativeTime,
   getConditionLabel,
-  getStatusColor,
   getStatusLabel,
   getInitials,
 } from '@/utils/helpers';
@@ -44,7 +43,6 @@ export default function ListingDetail() {
   const [isSaved, setIsSaved] = useState(false);
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
@@ -96,7 +94,7 @@ export default function ListingDetail() {
     return null;
   }
 
-  const isOwner = user?.id === listing.seller;
+  const isOwner = user?.id === listing.seller.id;
   const averageRating = 4.5; // Mock average rating
 
   return (
@@ -183,7 +181,7 @@ export default function ListingDetail() {
           </div>
 
           {/* Size Selector */}
-          {listing.category_detail?.name === 'Fashion' && (
+          {listing.category?.name === 'Fashion' && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-900">Select size</span>
@@ -225,7 +223,7 @@ export default function ListingDetail() {
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <span className="text-sm text-gray-500">Category</span>
               <span className="text-sm font-medium text-gray-900">
-                {listing.category_detail?.name || 'Other'}
+                {listing.category?.name || listing.category_name || 'Other'}
               </span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -243,18 +241,18 @@ export default function ListingDetail() {
           </div>
 
           {/* Seller Info */}
-          {!isOwner && listing.seller_profile && (
+          {!isOwner && listing.seller?.profile && (
             <div className="bg-gray-50 rounded-2xl p-4 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
-                  {getInitials(listing.seller_profile.name)}
+                  {getInitials(listing.seller.profile.name)}
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-gray-900">
-                    {listing.seller_profile.name}
+                    {listing.seller.profile.name}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    {listing.seller_profile.course || 'University of Hertfordshire'}
+                    {listing.seller.profile.course || 'University of Hertfordshire'}
                   </p>
                 </div>
                 <button className="px-4 py-2 bg-white rounded-xl text-sm font-medium text-gray-900 border border-gray-200">

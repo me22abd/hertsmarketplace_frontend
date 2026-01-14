@@ -38,6 +38,7 @@ export interface Listing {
   image: string;
   is_sold: boolean;
   is_saved?: boolean;
+  is_deleted?: boolean;
   created_at: string;
   seller: User;
   category_name?: string;

@@ -131,15 +131,20 @@ export const listingsAPI = {
     return response.data;
   },
 
-  create: async (data: CreateListingData): Promise<Listing> => {
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('price', data.price);
-    formData.append('condition', data.condition);
-    formData.append('category_id', data.category_id.toString());
-    formData.append('image', data.image);
-    if (data.description) {
-      formData.append('description', data.description);
+  create: async (data: FormData | CreateListingData): Promise<Listing> => {
+    let formData: FormData;
+    if (data instanceof FormData) {
+      formData = data;
+    } else {
+      formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('price', data.price);
+      formData.append('condition', data.condition);
+      formData.append('category_id', data.category_id.toString());
+      formData.append('image', data.image);
+      if (data.description) {
+        formData.append('description', data.description);
+      }
     }
 
     const response = await api.post<Listing>('/listings/', formData, {

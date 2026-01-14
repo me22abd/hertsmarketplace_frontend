@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Trash2, MessageCircle, ShoppingBag, Plus, Minus } from 'lucide-react';
-import { savedListingsAPI, listingsAPI } from '@/services/api';
+import { Trash2, MessageCircle, ShoppingBag } from 'lucide-react';
+import { savedListingsAPI } from '@/services/api';
 import type { SavedListing } from '@/types';
 import Loading from '@/components/Loading';
 import BottomNav from '@/components/BottomNav';
@@ -115,9 +115,9 @@ export default function Bag() {
                           >
                             {item.listing.title}
                           </h3>
-                          {item.listing.seller_profile && (
+                          {item.listing.seller?.profile?.name && (
                             <p className="text-xs text-gray-500 mt-0.5">
-                              Seller: {item.listing.seller_profile.name}
+                              Seller: {item.listing.seller.profile.name}
                             </p>
                           )}
                         </div>
