@@ -24,9 +24,10 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Create axios instance
+// Create axios instance with timeout
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -44,12 +45,27 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for token refresh
+// Response interceptor for token refresh and error handling
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as any;
 
+    // Handle timeout errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      const timeoutError = new Error('Request timeout: The server is taking too long to respond. Please check if the backend is running.');
+      (timeoutError as any).isTimeout = true;
+      return Promise.reject(timeoutError);
+    }
+
+    // Handle network errors (backend down, CORS issues, etc.)
+    if (!error.response && error.request) {
+      const networkError = new Error('Network error: Cannot reach the server. The backend may be down or unreachable.');
+      (networkError as any).isNetworkError = true;
+      return Promise.reject(networkError);
+    }
+
+    // Handle 401 errors for token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -58,7 +74,8 @@ api.interceptors.response.use(
         if (refreshToken) {
           const { data } = await axios.post<{ access: string }>(
             `${API_BASE_URL}/auth/token/refresh/`,
-            { refresh: refreshToken }
+            { refresh: refreshToken },
+            { timeout: 30000 }
           );
           localStorage.setItem('access_token', data.access);
           originalRequest.headers.Authorization = `Bearer ${data.access}`;
