@@ -38,8 +38,12 @@ export default function Register() {
 
     try {
       await register(formData);
-      toast.success('Account created successfully!');
-      navigate('/home', { replace: true });
+      toast.success('Account created! Please check your email for the verification code.');
+      // Redirect to verification page with email
+      navigate('/verify-email', { 
+        state: { email: formData.email },
+        replace: true 
+      });
     } catch (error: any) {
       toast.error(getErrorMessage(error));
     }

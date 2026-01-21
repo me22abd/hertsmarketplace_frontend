@@ -9,6 +9,7 @@ import Loading from '@/components/Loading';
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import VerifyEmail from '@/pages/VerifyEmail';
 import Home from '@/pages/Home';
 import Search from '@/pages/Search';
 import Bag from '@/pages/Bag';
@@ -75,6 +76,10 @@ function App() {
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/home" replace /> : <Register />}
+        />
+        <Route
+          path="/verify-email"
+          element={<VerifyEmail />}
         />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
