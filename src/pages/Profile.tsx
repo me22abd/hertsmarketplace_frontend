@@ -30,7 +30,16 @@ export default function Profile() {
       toast.success(response.message || 'Verification code sent to your email!');
       setShowVerificationInput(true);
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || error.response?.data?.error || 'Failed to send verification email');
+      // Handle timeout and network errors specifically
+      if (error.isTimeout || error.message?.includes('timeout')) {
+        toast.error('Request timed out. The server is taking too long to respond. Please try again or check if the backend is running.');
+      } else if (error.isNetworkError || error.message?.includes('Network error') || error.message?.includes('Cannot reach')) {
+        toast.error('Cannot reach the server. The backend may be down. Please try again in a few moments.');
+      } else if (error.response?.status === 502) {
+        toast.error('Server error (502). The backend is currently unavailable. Please try again in a few moments.');
+      } else {
+        toast.error(error.response?.data?.detail || error.response?.data?.error || error.message || 'Failed to send verification email');
+      }
     } finally {
       setIsVerifying(false);
     }
