@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, X, Camera, AlertCircle } from 'lucide-react';
-import { listingsAPI, categoriesAPI } from '@/services/api';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, X, Camera } from 'lucide-react';
+import { listingsAPI, categoriesAPI, authAPI } from '@/services/api';
 import type { Category, ListingCondition } from '@/types';
-import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
@@ -33,6 +32,51 @@ export default function CreateListing() {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // If user is not verified, redirect them to the Verify Email flow
+  useEffect(() => {
+    const runVerificationRedirect = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      if (user.email_verified) {
+        return; // Already verified – nothing to do
+      }
+
+      if (!user.email) {
+        toast.error('Please add an email address to your profile before creating listings.');
+        navigate('/profile');
+        return;
+      }
+
+      try {
+        // Automatically send verification code when user starts the sell flow
+        await authAPI.sendVerificationEmail();
+        toast.success('Please verify your email to start selling. A 6-digit code has been sent.');
+      } catch (error: any) {
+        // Even if sending fails, still route them to the verify screen so they can retry
+        const message =
+          error?.response?.data?.detail ||
+          error?.response?.data?.error ||
+          'Could not send verification code. You can try resending on the next screen.';
+        toast.error(message);
+      } finally {
+        navigate('/verify-email', {
+          state: {
+            email: user.email,
+            redirectTo: '/create',
+          },
+          replace: true,
+        });
+      }
+    };
+
+    if (user && !user.email_verified) {
+      runVerificationRedirect();
+    }
+  }, [user, navigate]);
 
   const loadCategories = async () => {
     try {
@@ -102,38 +146,9 @@ export default function CreateListing() {
     }
   };
 
-  // Check if email is verified
+  // While we redirect unverified users, render nothing here
   if (!user?.email_verified) {
-    return (
-      <div className="min-h-screen bg-white pb-20">
-        <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-          <div className="w-full max-w-md mx-auto px-4 py-3">
-            <div className="flex items-center gap-3">
-              <button onClick={() => navigate(-1)} className="touch-target -ml-2">
-                <ArrowLeft size={24} className="text-gray-900" />
-              </button>
-              <h1 className="text-xl font-bold text-gray-900">Create Listing</h1>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full max-w-md mx-auto px-4 py-8">
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center">
-            <AlertCircle size={48} className="text-amber-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-amber-900 mb-2">Email Verification Required</h2>
-            <p className="text-sm text-amber-800 mb-6">
-              Please verify your email address before creating listings on HertsMarketplace.
-            </p>
-            <Link
-              to="/profile"
-              className="inline-block bg-primary text-white px-6 py-3 rounded-xl font-semibold"
-            >
-              Go to Profile to Verify
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

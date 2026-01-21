@@ -25,7 +25,7 @@ export interface Category {
   listing_count: number;
 }
 
-export type ListingStatus = 'available' | 'reserved' | 'sold';
+export type ListingStatus = 'active' | 'sold';
 export type ListingCondition = 'new' | 'good' | 'used';
 
 export interface Listing {

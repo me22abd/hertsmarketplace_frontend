@@ -32,16 +32,16 @@ export default function MyListings() {
     }
   };
 
-  const handleStatusChange = async (listing: Listing, newStatus: 'available' | 'reserved' | 'sold') => {
+  const handleStatusChange = async (listing: Listing, newStatus: 'active' | 'sold') => {
     try {
-      if (newStatus === 'available') {
-        await listingsAPI.markAvailable(listing.id);
-      } else if (newStatus === 'reserved') {
-        await listingsAPI.markReserved(listing.id);
+      if (newStatus === 'active') {
+        await listingsAPI.relist(listing.id);
       } else if (newStatus === 'sold') {
         await listingsAPI.markSold(listing.id);
       }
-      toast.success(`Listing marked as ${newStatus}`);
+      toast.success(
+        newStatus === 'active' ? 'Listing relisted' : 'Listing marked as sold'
+      );
       setShowMenu(false);
       setSelectedListing(null);
       await loadMyListings();
@@ -65,9 +65,8 @@ export default function MyListings() {
     }
   };
 
-  const activeListings = listings.filter(l => l.status === 'available');
-  const soldListings = listings.filter(l => l.status === 'sold');
-  const reservedListings = listings.filter(l => l.status === 'reserved');
+  const activeListings = listings.filter((l) => !l.is_deleted && l.status === 'active');
+  const soldListings = listings.filter((l) => !l.is_deleted && l.status === 'sold');
 
   return (
     <div className="min-h-screen bg-white pb-20">
@@ -150,27 +149,6 @@ export default function MyListings() {
                 </div>
               </div>
             )}
-
-            {/* Reserved Listings */}
-            {reservedListings.length > 0 && (
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-3">
-                  Reserved ({reservedListings.length})
-                </h2>
-                <div className="space-y-3">
-                  {reservedListings.map((listing) => (
-                    <ListingItem
-                      key={listing.id}
-                      listing={listing}
-                      onMenuClick={() => {
-                        setSelectedListing(listing);
-                        setShowMenu(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -185,27 +163,19 @@ export default function MyListings() {
               
               <div className="space-y-2 mb-6">
                 <button
-                  onClick={() => navigate(`/listings/${selectedListing.id}`)}
+                  onClick={() => navigate(`/listing/${selectedListing.id}`)}
                   className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <Eye size={20} className="text-gray-700" />
                   <span className="text-gray-900">View Listing</span>
                 </button>
                 <button
-                  onClick={() => handleStatusChange(selectedListing, 'available')}
-                  disabled={selectedListing.status === 'available'}
+                  onClick={() => handleStatusChange(selectedListing, 'active')}
+                  disabled={selectedListing.status === 'active'}
                   className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
                 >
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-gray-900">Mark as Available</span>
-                </button>
-                <button
-                  onClick={() => handleStatusChange(selectedListing, 'reserved')}
-                  disabled={selectedListing.status === 'reserved'}
-                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50"
-                >
-                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                  <span className="text-gray-900">Mark as Reserved</span>
+                  <span className="text-gray-900">Relist (Mark as Active)</span>
                 </button>
                 <button
                   onClick={() => handleStatusChange(selectedListing, 'sold')}

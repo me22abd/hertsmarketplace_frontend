@@ -1,4 +1,4 @@
-import { Heart, Star } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Listing } from '@/types';
 import { useState } from 'react';
@@ -39,13 +39,9 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
     }
   };
 
-  // Generate random rating for visual purposes (in production, this would come from backend)
-  const rating = 4;
-  const reviewCount = Math.floor(Math.random() * 20) + 1;
-
   return (
     <Link to={`/listing/${listing.id}`} className="block">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-white rounded-xl overflow-hidden">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100">
           {listing.image ? (
@@ -65,54 +61,28 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
           <button
             onClick={handleSaveToggle}
             disabled={isLoading}
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
-              isSaved ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+            className={`absolute top-2 right-2 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
+              isSaved ? 'bg-primary text-white' : 'bg-white/90 text-gray-700 hover:bg-white'
             }`}
           >
-            <Heart size={16} className={isSaved ? 'fill-current' : ''} />
+            <Heart size={18} className={isSaved ? 'fill-current' : ''} />
           </button>
-
-          {/* Status/Discount badge */}
-          {listing.status === 'reserved' && (
-            <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-              RESERVED
-            </div>
-          )}
-          {listing.status === 'sold' && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-              SOLD
-            </div>
-          )}
         </div>
 
-        {/* Content */}
-        <div className="p-3">
-          {/* Rating */}
-          <div className="flex items-center gap-1 mb-1.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                size={12}
-                className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
-              />
-            ))}
-            <span className="text-xs text-gray-500 ml-0.5">({reviewCount})</span>
-          </div>
-
-          {/* Seller/Category */}
-          {listing.seller?.profile?.name && (
-            <p className="text-xs text-gray-500 mb-1 truncate">{listing.seller.profile.name}</p>
-          )}
+        {/* Content - Minimal Vinted style */}
+        <div className="p-3 space-y-1">
+          {/* Price (bold, primary) */}
+          <p className="text-lg font-bold text-gray-900">£{listing.price}</p>
 
           {/* Title */}
-          <h3 className="font-semibold text-sm text-gray-900 mb-1.5 truncate-2 leading-tight min-h-[2.5rem]">
+          <h3 className="font-medium text-sm text-gray-900 line-clamp-2 leading-tight min-h-[2.5rem]">
             {listing.title}
           </h3>
-          
-          {/* Price */}
-          <div className="flex items-center gap-2">
-            <p className="text-base font-bold text-gray-900">£{listing.price}</p>
-          </div>
+
+          {/* Condition */}
+          <p className="text-xs text-gray-500 capitalize">
+            {listing.condition}
+          </p>
         </div>
       </div>
     </Link>
