@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, User as UserIcon, BookOpen } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { getErrorMessage, isHertsEmail } from '@/utils/helpers';
+import { getErrorMessage } from '@/utils/helpers';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -21,11 +21,6 @@ export default function Register() {
     e.preventDefault();
 
     // Validation
-    if (!isHertsEmail(formData.email)) {
-      toast.error('Please use your @herts.ac.uk email');
-      return;
-    }
-
     if (formData.password !== formData.password2) {
       toast.error('Passwords do not match');
       return;
@@ -39,6 +34,7 @@ export default function Register() {
     try {
       await register(formData);
       toast.success('Account created successfully!');
+      // Go straight to home – email verification is only required when creating listings
       navigate('/home', { replace: true });
     } catch (error: any) {
       toast.error(getErrorMessage(error));
@@ -71,7 +67,7 @@ export default function Register() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm md:text-base font-medium text-text-primary mb-2 md:mb-3">
-                University Email *
+                Email *
               </label>
               <div className="relative">
                 <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -81,12 +77,14 @@ export default function Register() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="your.email@herts.ac.uk"
+                  placeholder="you@example.com"
                   className="input pl-12 text-base md:text-lg py-3 md:py-4"
                   required
                 />
               </div>
-              <p className="text-xs md:text-sm text-text-secondary mt-1 md:mt-2">Must be a @herts.ac.uk email</p>
+              <p className="text-xs md:text-sm text-text-secondary mt-1 md:mt-2">
+                You can use any valid email address. We’ll send a code when you’re ready to start selling.
+              </p>
             </div>
 
             {/* Name */}

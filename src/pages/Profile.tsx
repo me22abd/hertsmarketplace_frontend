@@ -14,7 +14,7 @@ export default function Profile() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationToken, setVerificationToken] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [showVerificationInput, setShowVerificationInput] = useState(false);
 
   const handleLogout = () => {
@@ -27,35 +27,41 @@ export default function Profile() {
     try {
       setIsVerifying(true);
       const response = await authAPI.sendVerificationEmail();
-      toast.success(response.message);
-      
-      // In development, show the token
-      if (response.verification_token) {
-        setVerificationToken(response.verification_token);
-        setShowVerificationInput(true);
-      }
+      toast.success(response.message || 'Verification code sent to your email!');
+      setShowVerificationInput(true);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to send verification email');
+      toast.error(error.response?.data?.detail || error.response?.data?.error || 'Failed to send verification email');
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleVerifyEmail = async () => {
-    if (!verificationToken.trim()) {
-      toast.error('Please enter verification token');
+    if (!verificationCode.trim()) {
+      toast.error('Please enter the 6-digit verification code');
+      return;
+    }
+
+    if (!verificationCode.match(/^\d{6}$/)) {
+      toast.error('Verification code must be exactly 6 digits');
+      return;
+    }
+
+    if (!user?.email) {
+      toast.error('No email address found');
       return;
     }
 
     try {
       setIsVerifying(true);
-      const response = await authAPI.verifyEmail(verificationToken);
-      toast.success(response.message);
-      await loadUser(); // Reload user data
+      const response = await authAPI.verifyEmail(user.email, verificationCode);
+      toast.success(response.message || 'Email verified successfully!');
       setShowVerificationInput(false);
-      setVerificationToken('');
+      setVerificationCode('');
+      await loadUser(); // Refresh user data
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Verification failed');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Verification failed';
+      toast.error(errorMessage);
     } finally {
       setIsVerifying(false);
     }
@@ -97,18 +103,19 @@ export default function Profile() {
                 ) : (
                   <div className="space-y-2">
                     <p className="text-xs text-amber-700 bg-amber-100 p-2 rounded">
-                      <strong>Dev Token:</strong> {verificationToken}
+                      Check your email for the 6-digit verification code. It expires in 10 minutes.
                     </p>
                     <input
                       type="text"
-                      value={verificationToken}
-                      onChange={(e) => setVerificationToken(e.target.value)}
-                      placeholder="Enter verification token"
-                      className="w-full px-3 py-2 rounded-lg border border-amber-300 text-sm"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="Enter 6-digit code"
+                      maxLength={6}
+                      className="w-full px-3 py-2 rounded-lg border border-amber-300 text-sm text-center text-lg tracking-widest"
                     />
                     <button
                       onClick={handleVerifyEmail}
-                      disabled={isVerifying}
+                      disabled={isVerifying || verificationCode.length !== 6}
                       className="w-full bg-amber-600 text-white font-semibold py-2.5 rounded-xl disabled:opacity-50"
                     >
                       {isVerifying ? 'Verifying...' : 'Verify Email'}

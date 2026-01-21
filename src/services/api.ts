@@ -93,13 +93,13 @@ export const authAPI = {
     return response.data;
   },
 
-  sendVerificationEmail: async (): Promise<{ message: string; verification_token?: string }> => {
+  sendVerificationEmail: async (): Promise<{ message: string; email_sent: boolean; expires_in_minutes?: number }> => {
     const response = await api.post('/auth/send-verification/');
     return response.data;
   },
 
-  verifyEmail: async (token: string): Promise<{ message: string; user: User }> => {
-    const response = await api.post('/auth/verify-email/', { token });
+  verifyEmail: async (email: string, code: string): Promise<{ message: string; user: User; email_verified: boolean }> => {
+    const response = await api.post('/auth/verify-email/', { email, code });
     return response.data;
   },
 };
