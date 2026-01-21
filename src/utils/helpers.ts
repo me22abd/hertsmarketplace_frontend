@@ -46,14 +46,7 @@ export const getStatusColor = (status: ListingStatus): string => {
 
 // Get status label
 export const getStatusLabel = (status: ListingStatus): string => {
-  switch (status) {
-    case 'active':
-      return 'Active';
-    case 'sold':
-      return 'Sold';
-    default:
-      return status;
-  }
+  return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 // Get condition label
@@ -73,6 +66,11 @@ export const getConditionColor = (condition: ListingCondition): string => {
     default:
       return 'text-gray-600';
   }
+};
+
+// Validate email
+export const isHertsEmail = (email: string): boolean => {
+  return email.toLowerCase().endsWith('@herts.ac.uk');
 };
 
 // File size validation

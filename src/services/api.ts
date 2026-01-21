@@ -184,8 +184,13 @@ export const listingsAPI = {
     return response.data;
   },
 
-  relist: async (id: number): Promise<Listing> => {
-    const response = await api.post<Listing>(`/listings/${id}/relist/`);
+  markReserved: async (id: number): Promise<Listing> => {
+    const response = await api.post<Listing>(`/listings/${id}/mark_reserved/`);
+    return response.data;
+  },
+
+  markAvailable: async (id: number): Promise<Listing> => {
+    const response = await api.post<Listing>(`/listings/${id}/mark_available/`);
     return response.data;
   },
 
