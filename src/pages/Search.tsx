@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Grid3x3, List, ChevronRight } from 'lucide-react';
+import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Grid3x3, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { categoriesAPI, listingsAPI } from '@/services/api';
 import type { Category, Listing, ListingCondition } from '@/types';
@@ -9,7 +9,7 @@ import BottomNav from '@/components/BottomNav';
 import { debounce } from '@/utils/helpers';
 import toast from 'react-hot-toast';
 
-const CONDITIONS: ListingCondition[] = ['new', 'like_new', 'good', 'fair'];
+const CONDITIONS: ListingCondition[] = ['new', 'good', 'used'];
 const SORT_OPTIONS = [
   { value: '-created_at', label: 'Newest' },
   { value: 'created_at', label: 'Oldest' },

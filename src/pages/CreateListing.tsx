@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Camera, AlertCircle } from 'lucide-react';
+import { ArrowLeft, X, Camera, AlertCircle } from 'lucide-react';
 import { listingsAPI, categoriesAPI } from '@/services/api';
 import type { Category, ListingCondition } from '@/types';
 import { useEffect } from 'react';
@@ -9,9 +9,8 @@ import toast from 'react-hot-toast';
 
 const CONDITIONS: { value: ListingCondition; label: string }[] = [
   { value: 'new', label: 'New' },
-  { value: 'like_new', label: 'Like New' },
   { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
+  { value: 'used', label: 'Used' },
 ];
 
 export default function CreateListing() {

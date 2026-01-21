@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User as UserIcon, Settings, Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, Mail, CheckCircle, AlertCircle, Edit2 } from 'lucide-react';
+import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/services/api';
 import BottomNav from '@/components/BottomNav';
