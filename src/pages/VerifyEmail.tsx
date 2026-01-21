@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/services/api';
 import toast from 'react-hot-toast';
