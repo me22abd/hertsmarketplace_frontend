@@ -589,4 +589,38 @@ export const searchAPI = {
   },
 };
 
+// Reviews API
+export const reviewsAPI = {
+  list: async (sellerId?: number, listingId?: number): Promise<any> => {
+    const params: any = {};
+    if (sellerId) params.seller_id = sellerId;
+    if (listingId) params.listing_id = listingId;
+    const response = await api.get('/reviews/', { params });
+    return response.data;
+  },
+
+  create: async (data: {
+    seller: number;
+    listing?: number;
+    rating: number;
+    comment: string;
+    is_verified_purchase?: boolean;
+  }): Promise<any> => {
+    const response = await api.post('/reviews/', data);
+    return response.data;
+  },
+
+  sellerStats: async (sellerId: number): Promise<{
+    seller_id: number;
+    total_reviews: number;
+    average_rating: number;
+    rating_breakdown: { [key: number]: number };
+  }> => {
+    const response = await api.get('/reviews/seller_stats/', {
+      params: { seller_id: sellerId },
+    });
+    return response.data;
+  },
+};
+
 export default api;
