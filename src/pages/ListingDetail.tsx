@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Star, ChevronRight, X, Check } from 'lucide-react';
-import { listingsAPI } from '@/services/api';
+import { listingsAPI, reviewsAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';
 import { useAuthStore } from '@/store/authStore';
@@ -14,25 +14,15 @@ import {
 } from '@/utils/helpers';
 import toast from 'react-hot-toast';
 
-// Mock review data (since backend doesn't have reviews yet)
-const MOCK_REVIEWS = [
-  {
-    id: 1,
-    author: 'Sarah M.',
-    rating: 5,
-    date: '2 weeks ago',
-    comment: 'Great condition! Exactly as described. Quick and easy pickup.',
-    verified: true,
-  },
-  {
-    id: 2,
-    author: 'James K.',
-    rating: 4,
-    date: '1 month ago',
-    comment: 'Good quality item. Seller was very responsive.',
-    verified: true,
-  },
-];
+interface Review {
+  id: number;
+  reviewer_name: string;
+  reviewer_avatar?: string;
+  rating: number;
+  comment: string;
+  is_verified_purchase: boolean;
+  created_at: string;
+}
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +34,13 @@ export default function ListingDetail() {
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState('M');
   const [showReviews, setShowReviews] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<{
+    total_reviews: number;
+    average_rating: number;
+  } | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -51,9 +48,16 @@ export default function ListingDetail() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (listing?.seller?.id) {
+      loadReviews();
+    }
+  }, [listing?.seller?.id]);
+
   const loadListing = async () => {
     try {
       setIsLoading(true);
+      setImageError(false);
       const data = await listingsAPI.get(Number(id));
       setListing(data);
       setIsSaved(data.is_saved || false);
@@ -62,6 +66,30 @@ export default function ListingDetail() {
       navigate('/home');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadReviews = async () => {
+    if (!listing?.seller?.id) return;
+    
+    try {
+      setIsLoadingReviews(true);
+      const [reviewsData, statsData] = await Promise.all([
+        reviewsAPI.list(listing.seller.id, listing.id),
+        reviewsAPI.sellerStats(listing.seller.id),
+      ]);
+      
+      // Handle paginated or direct array response
+      const reviewsList = reviewsData.results || (Array.isArray(reviewsData) ? reviewsData : []);
+      setReviews(reviewsList);
+      setReviewStats(statsData);
+    } catch (error: any) {
+      console.error('Failed to load reviews:', error);
+      // Don't show error toast - reviews are optional
+      setReviews([]);
+      setReviewStats({ total_reviews: 0, average_rating: 0 });
+    } finally {
+      setIsLoadingReviews(false);
     }
   };
 
@@ -95,7 +123,8 @@ export default function ListingDetail() {
   }
 
   const isOwner = user?.id === listing.seller.id;
-  const averageRating = 4.5; // Mock average rating
+  const averageRating = reviewStats?.average_rating || 0;
+  const totalReviews = reviewStats?.total_reviews || 0;
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -117,14 +146,15 @@ export default function ListingDetail() {
       {/* Image Gallery */}
       <div className="w-full max-w-md mx-auto">
         <div className="relative aspect-square bg-gray-50">
-          {listing.image ? (
+          {listing.image && !imageError ? (
             <img
               src={listing.image}
               alt={listing.title}
               className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl">
+            <div className="w-full h-full flex items-center justify-center text-6xl bg-gray-100">
               📦
             </div>
           )}
@@ -138,24 +168,26 @@ export default function ListingDetail() {
           <div className="flex items-start justify-between mb-2">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">{listing.title}</h1>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      className={i < Math.floor(averageRating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
-                    />
-                  ))}
+              {totalReviews > 0 && (
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        className={i < Math.floor(averageRating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">{averageRating.toFixed(1)}</span>
+                  <button
+                    onClick={() => setShowReviews(true)}
+                    className="text-sm text-gray-500 underline"
+                  >
+                    ({totalReviews} {totalReviews === 1 ? 'review' : 'reviews'})
+                  </button>
                 </div>
-                <span className="text-sm text-gray-600">{averageRating}</span>
-                <button
-                  onClick={() => setShowReviews(true)}
-                  className="text-sm text-gray-500 underline"
-                >
-                  (2 reviews)
-                </button>
-              </div>
+              )}
             </div>
             <span className="text-2xl font-bold text-primary">
               {formatPrice(listing.price)}
@@ -263,47 +295,55 @@ export default function ListingDetail() {
           )}
 
           {/* Reviews Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-gray-900">Reviews</h2>
-              <button
-                onClick={() => setShowReviews(true)}
-                className="text-sm text-gray-500 flex items-center gap-1"
-              >
-                See all
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {MOCK_REVIEWS.slice(0, 2).map((review) => (
-                <div key={review.id} className="bg-gray-50 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {review.author}
-                        </span>
-                        {review.verified && (
-                          <Check size={14} className="text-primary" />
-                        )}
+          {totalReviews > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-gray-900">Reviews</h2>
+                {totalReviews > 2 && (
+                  <button
+                    onClick={() => setShowReviews(true)}
+                    className="text-sm text-gray-500 flex items-center gap-1"
+                  >
+                    See all
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {reviews.slice(0, 2).map((review) => (
+                  <div key={review.id} className="bg-gray-50 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {review.reviewer_name}
+                          </span>
+                          {review.is_verified_purchase && (
+                            <Check size={14} className="text-primary" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={12}
-                            className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
-                          />
-                        ))}
-                      </div>
+                      <span className="text-xs text-gray-500">
+                        {formatRelativeTime(review.created_at)}
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500">{review.date}</span>
+                    {review.comment && (
+                      <p className="text-sm text-gray-600">{review.comment}</p>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600">{review.comment}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

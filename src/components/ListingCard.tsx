@@ -39,9 +39,8 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
     }
   };
 
-  // Generate random rating for visual purposes (in production, this would come from backend)
-  const rating = 4;
-  const reviewCount = Math.floor(Math.random() * 20) + 1;
+  // Reviews will come from backend when available
+  // For now, don't show fake ratings
 
   return (
     <Link to={`/listing/${listing.id}`} className="block">
