@@ -39,7 +39,16 @@ export default function Home() {
 
   const handleCategoryClick = async (slug: string) => {
     try {
-      const data = await listingsAPI.list({ category: slug, ordering: '-created_at' });
+      // Get AI-detected tags from localStorage if available (from image analysis)
+      const aiDetectedTags = localStorage.getItem('ai_detected_tags');
+      const params: any = { category: slug, ordering: '-created_at' };
+      
+      // If we have AI-detected tags, pass them to prioritize matching items
+      if (aiDetectedTags) {
+        params.ai_detected = aiDetectedTags;
+      }
+      
+      const data = await listingsAPI.list(params);
       setListings(data.results);
     } catch (error) {
       toast.error('Failed to filter listings');

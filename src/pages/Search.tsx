@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Grid3x3, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { categoriesAPI, listingsAPI } from '@/services/api';
+import { categoriesAPI, listingsAPI, searchAPI } from '@/services/api';
 import type { Category, Listing, ListingCondition } from '@/types';
 import ListingCard from '@/components/ListingCard';
 import Loading from '@/components/Loading';
@@ -65,6 +65,17 @@ export default function Search() {
 
       const data = await listingsAPI.list(params);
       setListings(data.results);
+      
+      // Save search history if user searched for something
+      if (searchQuery.trim()) {
+        try {
+          const category = categories.find(c => c.slug === filters.category);
+          await searchAPI.save(searchQuery.trim(), category?.id);
+        } catch (error) {
+          // Silently fail - search history saving is not critical
+          console.error('Failed to save search history:', error);
+        }
+      }
     } catch (error) {
       toast.error('Failed to load listings');
     } finally {
