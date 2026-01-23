@@ -7,6 +7,8 @@ interface SearchableSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  detectedCategories?: string[];
+  allowCustom?: boolean;
 }
 
 export default function SearchableSelect({
@@ -15,6 +17,8 @@ export default function SearchableSelect({
   onChange,
   placeholder = 'Search and select...',
   className = '',
+  detectedCategories = [],
+  allowCustom = false,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,10 +30,31 @@ export default function SearchableSelect({
   // Get selected option
   const selectedOption = options.find((opt) => opt.slug === value);
 
-  // Filter options based on search term
-  const filteredOptions = options.filter((option) =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and prioritize options
+  const filterAndSortOptions = () => {
+    let filtered = options.filter((option) =>
+      option.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // If we have detected categories and search term is empty, prioritize them
+    if (detectedCategories.length > 0 && !searchTerm) {
+      const detected = filtered.filter(opt => 
+        detectedCategories.some(detected => 
+          opt.name.toLowerCase().includes(detected.toLowerCase())
+        )
+      );
+      const others = filtered.filter(opt => 
+        !detectedCategories.some(detected => 
+          opt.name.toLowerCase().includes(detected.toLowerCase())
+        )
+      );
+      return [...detected, ...others];
+    }
+
+    return filtered;
+  };
+
+  const filteredOptions = filterAndSortOptions();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -152,26 +177,58 @@ export default function SearchableSelect({
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
           {filteredOptions.length > 0 ? (
             <ul ref={listRef} className="py-1">
-              {filteredOptions.map((option, index) => (
-                <li
-                  key={option.id}
-                  onClick={() => handleSelect(option.slug)}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`px-4 py-2.5 cursor-pointer text-sm transition-colors ${
-                    value === option.slug
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : highlightedIndex === index
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {option.name}
-                </li>
-              ))}
+              {filteredOptions.map((option, index) => {
+                const isDetected = detectedCategories.length > 0 && 
+                  detectedCategories.some(detected => 
+                    option.name.toLowerCase().includes(detected.toLowerCase())
+                  );
+                return (
+                  <li
+                    key={option.id}
+                    onClick={() => handleSelect(option.slug)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={`px-4 py-2.5 cursor-pointer text-sm transition-colors ${
+                      value === option.slug
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : highlightedIndex === index
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isDetected && (
+                        <span className="text-xs text-primary font-medium">✨</span>
+                      )}
+                      <span>{option.name}</span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
+          ) : options.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+              Loading categories...
+            </div>
           ) : (
             <div className="px-4 py-3 text-sm text-gray-500 text-center">
-              No categories found
+              {allowCustom && searchTerm ? (
+                <div>
+                  <p className="mb-2">No match found for "{searchTerm}"</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Allow custom category creation
+                      onChange(searchTerm);
+                      setIsOpen(false);
+                    }}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Create "{searchTerm}"
+                  </button>
+                </div>
+              ) : (
+                'No categories found'
+              )}
             </div>
           )}
         </div>
