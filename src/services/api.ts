@@ -148,10 +148,20 @@ export const categoriesAPI = {
         return response.data;
       } else if (Array.isArray(response.data)) {
         console.log('[api] categoriesAPI.list: Array response, wrapping in results');
-        return { results: response.data, count: response.data.length };
+        return { 
+          results: response.data, 
+          count: response.data.length,
+          next: null,
+          previous: null
+        };
       } else {
         console.warn('[api] categoriesAPI.list: Unexpected response format', response.data);
-        return { results: [], count: 0 };
+        return { 
+          results: [], 
+          count: 0,
+          next: null,
+          previous: null
+        };
       }
     } catch (error: any) {
       console.error('[api] categoriesAPI.list: Error', {
