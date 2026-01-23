@@ -42,12 +42,23 @@ export default function CreateListing() {
     try {
       // Call analyze-image without image to get default suggestions
       const result = await aiAPI.analyzeImage();
-      if (result.category_suggestions && result.category_suggestions.length > 0) {
+      console.log('[CreateListing] Default suggestions response:', result);
+      
+      if (result && result.category_suggestions && Array.isArray(result.category_suggestions) && result.category_suggestions.length > 0) {
+        console.log('[CreateListing] Setting detected categories:', result.category_suggestions);
         setDetectedCategories(result.category_suggestions);
+      } else {
+        console.warn('[CreateListing] No category_suggestions in response:', result);
       }
-    } catch (error) {
-      // Silently fail - defaults are optional
-      console.log('Could not load default suggestions:', error);
+    } catch (error: any) {
+      // Log error details for debugging
+      console.error('[CreateListing] Error loading default suggestions:', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
+      // Don't show error to user - defaults are optional
     }
   };
 
@@ -98,47 +109,125 @@ export default function CreateListing() {
 
   const loadCategories = async () => {
     try {
+      console.log('[CreateListing] Loading categories...');
       const response = await categoriesAPI.list();
-      // Handle paginated response or direct array
-      const categoriesList = response.results || (Array.isArray(response) ? response : []);
+      console.log('[CreateListing] Categories API response:', JSON.stringify(response, null, 2));
       
-      if (categoriesList.length === 0) {
-        console.warn('No categories returned from API. Response:', response);
-        // Show a helpful message but don't block the user
-        toast.error('Categories not available. Please contact support or try refreshing the page.');
+      // Handle paginated response or direct array
+      let categoriesList: Category[] = [];
+      
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.results)) {
+          categoriesList = response.results;
+        } else if (Array.isArray(response)) {
+          categoriesList = response;
+        } else if (response.results && Array.isArray(response.results)) {
+          categoriesList = response.results;
+        }
       }
       
-      setCategories(categoriesList);
+      console.log('[CreateListing] Parsed categories list:', categoriesList);
+      console.log('[CreateListing] Categories count:', categoriesList.length);
+      
+      if (categoriesList.length === 0) {
+        console.error('[CreateListing] No categories returned from API. Full response:', JSON.stringify(response, null, 2));
+        console.error('[CreateListing] Response type:', typeof response);
+        console.error('[CreateListing] Response keys:', response ? Object.keys(response) : 'null');
+        
+        // Try to load default categories as fallback
+        const defaultCategories: Category[] = [
+          { id: 1, name: 'Electronics', slug: 'electronics', icon: '💻', listing_count: 0 },
+          { id: 2, name: 'Books', slug: 'books', icon: '📚', listing_count: 0 },
+          { id: 3, name: 'Fashion', slug: 'fashion', icon: '👕', listing_count: 0 },
+          { id: 4, name: 'Furniture', slug: 'furniture', icon: '🛋️', listing_count: 0 },
+          { id: 5, name: 'Kitchen', slug: 'kitchen', icon: '🍴', listing_count: 0 },
+          { id: 6, name: 'Sports', slug: 'sports', icon: '⚽', listing_count: 0 },
+          { id: 7, name: 'Stationery', slug: 'stationery', icon: '📝', listing_count: 0 },
+          { id: 8, name: 'Other', slug: 'other', icon: '📦', listing_count: 0 },
+        ];
+        
+        console.warn('[CreateListing] Using fallback default categories');
+        setCategories(defaultCategories);
+        toast.error('Could not load categories from server. Using default categories.');
+      } else {
+        console.log(`[CreateListing] Successfully loaded ${categoriesList.length} categories`);
+        setCategories(categoriesList);
+      }
     } catch (error: any) {
-      console.error('Category loading error:', error);
+      console.error('[CreateListing] Category loading error:', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        isNetworkError: error?.isNetworkError,
+        isTimeout: error?.isTimeout,
+        stack: error?.stack
+      });
+      
+      // Use fallback categories on error
+      const defaultCategories: Category[] = [
+        { id: 1, name: 'Electronics', slug: 'electronics', icon: '💻', listing_count: 0 },
+        { id: 2, name: 'Books', slug: 'books', icon: '📚', listing_count: 0 },
+        { id: 3, name: 'Fashion', slug: 'fashion', icon: '👕', listing_count: 0 },
+        { id: 4, name: 'Furniture', slug: 'furniture', icon: '🛋️', listing_count: 0 },
+        { id: 5, name: 'Kitchen', slug: 'kitchen', icon: '🍴', listing_count: 0 },
+        { id: 6, name: 'Sports', slug: 'sports', icon: '⚽', listing_count: 0 },
+        { id: 7, name: 'Stationery', slug: 'stationery', icon: '📝', listing_count: 0 },
+        { id: 8, name: 'Other', slug: 'other', icon: '📦', listing_count: 0 },
+      ];
+      
+      setCategories(defaultCategories);
+      
       const errorMessage = error?.response?.data?.detail || error?.message || 'Failed to load categories';
-      toast.error(`Failed to load categories: ${errorMessage}`);
-      // Set empty array so UI doesn't break
-      setCategories([]);
+      
+      // Don't show toast for network errors that might be temporary
+      if (!error?.isNetworkError && !error?.isTimeout) {
+        toast.error(`Failed to load categories: ${errorMessage}. Using default categories.`);
+      } else {
+        console.warn('[CreateListing] Network error loading categories, using fallback');
+        toast.error('Network error loading categories. Using default categories.');
+      }
     }
   };
 
   const analyzeImage = async (imageFile: File) => {
     try {
       setIsAnalyzing(true);
+      console.log('[CreateListing] Analyzing image:', imageFile.name, imageFile.size);
+      
       const result = await aiAPI.analyzeImage(imageFile);
+      console.log('[CreateListing] AI analysis result:', result);
       
       // Always set categories (even if empty, defaults will be shown)
-      setDetectedCategories(result.category_suggestions || []);
+      const suggestions = result?.category_suggestions || [];
+      console.log('[CreateListing] Setting detected categories from analysis:', suggestions);
+      setDetectedCategories(suggestions);
       
       // Store AI-detected tags in localStorage for category prioritization
-      if (result.tags && result.tags.length > 0) {
+      if (result.tags && Array.isArray(result.tags) && result.tags.length > 0) {
         localStorage.setItem('ai_detected_tags', result.tags.join(','));
       }
       
       setIsAnalyzing(false);
       
       // Only show success if we got actual AI results (not just defaults)
-      if (result.category_suggestions && result.category_suggestions.length > 0 && !result.description?.includes('temporarily unavailable')) {
-        toast.success(`Detected ${result.category_suggestions.length} potential categor${result.category_suggestions.length > 1 ? 'ies' : 'y'}`);
+      // Check if description indicates it's a real AI result vs defaults
+      const isRealAIResult = result.description && 
+        !result.description.includes('No image provided') &&
+        !result.description.includes('validation failed') &&
+        !result.description.includes('AI analysis failed') &&
+        !result.description.includes('temporarily unavailable');
+      
+      if (suggestions.length > 0 && isRealAIResult) {
+        toast.success(`Detected ${suggestions.length} potential categor${suggestions.length > 1 ? 'ies' : 'y'}`);
       }
     } catch (error: any) {
-      console.error('Image analysis error:', error);
+      console.error('[CreateListing] Image analysis error:', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
       setIsAnalyzing(false);
       // Don't show error toast - endpoint now always returns 200 with defaults
       // Categories will still be available from defaults
