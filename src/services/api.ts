@@ -130,8 +130,39 @@ export const authAPI = {
 // Categories API
 export const categoriesAPI = {
   list: async (): Promise<PaginatedResponse<Category>> => {
-    const response = await api.get<PaginatedResponse<Category>>('/categories/');
-    return response.data;
+    try {
+      console.log('[api] categoriesAPI.list: Fetching categories...');
+      const response = await api.get<PaginatedResponse<Category>>('/categories/');
+      console.log('[api] categoriesAPI.list: Response received', {
+        status: response.status,
+        hasData: !!response.data,
+        hasResults: !!response.data?.results,
+        resultsLength: response.data?.results?.length,
+        isArray: Array.isArray(response.data),
+        dataType: Array.isArray(response.data) ? 'array' : typeof response.data
+      });
+      
+      // Handle both paginated and direct array responses
+      if (response.data?.results) {
+        console.log('[api] categoriesAPI.list: Paginated response, returning results');
+        return response.data;
+      } else if (Array.isArray(response.data)) {
+        console.log('[api] categoriesAPI.list: Array response, wrapping in results');
+        return { results: response.data, count: response.data.length };
+      } else {
+        console.warn('[api] categoriesAPI.list: Unexpected response format', response.data);
+        return { results: [], count: 0 };
+      }
+    } catch (error: any) {
+      console.error('[api] categoriesAPI.list: Error', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        isNetworkError: error?.isNetworkError
+      });
+      throw error;
+    }
   },
 
   getBySlug: async (slug: string): Promise<Category> => {
@@ -321,23 +352,67 @@ export const aiAPI = {
       // Image is optional - endpoint returns defaults if no image
       if (imageFile && imageFile.size > 0) {
         formData.append('image', imageFile);
+        console.log('[api] analyzeImage: Sending image', imageFile.name, imageFile.size);
+      } else {
+        console.log('[api] analyzeImage: No image provided, requesting defaults');
       }
+      
       const response = await api.post('/ai/analyze-image/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return response.data;
+      
+      console.log('[api] analyzeImage: Response received', {
+        status: response.status,
+        data: response.data,
+        hasCategorySuggestions: !!response.data?.category_suggestions,
+        categorySuggestionsLength: response.data?.category_suggestions?.length,
+        categorySuggestionsType: Array.isArray(response.data?.category_suggestions) ? 'array' : typeof response.data?.category_suggestions
+      });
+      
+      // Validate response structure
+      if (!response.data) {
+        console.warn('[api] analyzeImage: Empty response data');
+        return {
+          tags: [],
+          category_suggestions: [],
+          description: 'Empty response from server'
+        };
+      }
+      
+      // Ensure category_suggestions is an array
+      const categorySuggestions = Array.isArray(response.data.category_suggestions) 
+        ? response.data.category_suggestions 
+        : [];
+      
+      const result = {
+        tags: Array.isArray(response.data.tags) ? response.data.tags : [],
+        category_suggestions: categorySuggestions,
+        description: response.data.description || ''
+      };
+      
+      console.log('[api] analyzeImage: Parsed result', result);
+      return result;
+      
     } catch (error: any) {
+      console.error('[api] analyzeImage: Error occurred', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        isNetworkError: error?.isNetworkError
+      });
+      
       // Handle 404 specifically (endpoint not deployed yet)
       if (error.response?.status === 404) {
-        // Return defaults instead of throwing error
+        console.warn('[api] analyzeImage: 404 - endpoint not found, returning defaults');
         return {
           tags: [],
           category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
           description: 'AI analysis unavailable. Please select a category manually.'
         };
       }
+      
       // For other errors, return defaults instead of throwing
-      console.error('AI analysis error:', error);
       return {
         tags: [],
         category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
