@@ -316,12 +316,20 @@ export const reportsAPI = {
 // AI API
 export const aiAPI = {
   analyzeImage: async (imageFile: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    const response = await api.post('/ai/analyze-image/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      const response = await api.post('/ai/analyze-image/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error: any) {
+      // Handle 404 specifically (endpoint not deployed yet)
+      if (error.response?.status === 404) {
+        throw new Error('AI analysis is currently unavailable. The feature is being deployed. Please try again in a few minutes.');
+      }
+      throw error;
+    }
   },
 };
 

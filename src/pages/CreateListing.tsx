@@ -120,10 +120,17 @@ export default function CreateListing() {
       if (result.category_suggestions && result.category_suggestions.length > 0) {
         toast.success(`Detected ${result.category_suggestions.length} potential categor${result.category_suggestions.length > 1 ? 'ies' : 'y'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Image analysis error:', error);
       setIsAnalyzing(false);
-      toast.error('Failed to analyze image. You can still select a category manually.');
+      
+      // Show user-friendly error message
+      const errorMessage = error?.message || 'Failed to analyze image';
+      if (errorMessage.includes('currently unavailable') || errorMessage.includes('being deployed')) {
+        toast.error('AI analysis is being deployed. You can still select a category manually.');
+      } else {
+        toast.error('Failed to analyze image. You can still select a category manually.');
+      }
     }
   };
 
