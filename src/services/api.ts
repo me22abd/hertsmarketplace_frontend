@@ -60,7 +60,13 @@ api.interceptors.response.use(
 
     // Handle network errors (backend down, CORS issues, etc.)
     if (!error.response && error.request) {
-      const networkError = new Error('Network error: Cannot reach the server. The backend may be down or unreachable.');
+      // Check if it's a CORS error or connection issue
+      const isCorsError = error.message?.includes('CORS') || error.message?.includes('Network Error');
+      const errorMessage = isCorsError 
+        ? 'Connection error: Please check your internet connection and try again.'
+        : `Cannot connect to server. Please check:\n1. Your internet connection\n2. The backend server is running\n3. API URL: ${API_BASE_URL}`;
+      
+      const networkError = new Error(errorMessage);
       (networkError as any).isNetworkError = true;
       return Promise.reject(networkError);
     }
@@ -145,6 +151,7 @@ export const listingsAPI = {
     max_price?: number;
     ordering?: string;
     page?: number;
+    ai_detected?: string;
   }): Promise<PaginatedResponse<Listing>> => {
     const response = await api.get<PaginatedResponse<Listing>>('/listings/', { params });
     return response.data;
@@ -301,6 +308,190 @@ export const reportsAPI = {
       listing: listingId,
       reason,
       description,
+    });
+    return response.data;
+  },
+};
+
+// AI API
+export const aiAPI = {
+  analyzeImage: async (imageFile?: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
+    try {
+      const formData = new FormData();
+      // Image is optional - endpoint returns defaults if no image
+      if (imageFile && imageFile.size > 0) {
+        formData.append('image', imageFile);
+      }
+      const response = await api.post('/ai/analyze-image/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error: any) {
+      // Handle 404 specifically (endpoint not deployed yet)
+      if (error.response?.status === 404) {
+        // Return defaults instead of throwing error
+        return {
+          tags: [],
+          category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
+          description: 'AI analysis unavailable. Please select a category manually.'
+        };
+      }
+      // For other errors, return defaults instead of throwing
+      console.error('AI analysis error:', error);
+      return {
+        tags: [],
+        category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
+        description: 'Could not analyze image. Please select a category manually.'
+      };
+    }
+  },
+};
+
+// Search API
+export const premiumAPI = {
+  // AI Price Suggestions
+  suggestPrice: async (data: {
+    title?: string;
+    description?: string;
+    category?: number | string;
+    condition?: string;
+    image?: File;
+  }) => {
+    const formData = new FormData();
+    if (data.title) formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (data.category) formData.append('category', String(data.category));
+    if (data.condition) formData.append('condition', data.condition);
+    if (data.image) formData.append('image', data.image);
+
+    const response = await api.post('/ai/suggest-price/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Generate Listing Content
+  generateContent: async (image: File, category?: number | string) => {
+    const formData = new FormData();
+    formData.append('image', image);
+    if (category) formData.append('category', String(category));
+
+    const response = await api.post('/ai/generate-content/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Upload Avatar
+  uploadAvatar: async (avatarUrl?: string, profilePhoto?: File) => {
+    const formData = new FormData();
+    if (avatarUrl) formData.append('avatar_url', avatarUrl);
+    if (profilePhoto) formData.append('profile_photo', profilePhoto);
+
+    const response = await api.post('/profile/upload-avatar/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Draft Listings
+  getDrafts: async () => {
+    const response = await api.get('/drafts/');
+    return response.data;
+  },
+
+  createDraft: async (data: {
+    title?: string;
+    description?: string;
+    price?: number;
+    category?: number;
+    condition?: string;
+    images_data?: any[];
+  }) => {
+    const response = await api.post('/drafts/', data);
+    return response.data;
+  },
+
+  updateDraft: async (id: number, data: any) => {
+    const response = await api.patch(`/drafts/${id}/`, data);
+    return response.data;
+  },
+
+  deleteDraft: async (id: number) => {
+    const response = await api.delete(`/drafts/${id}/`);
+    return response.data;
+  },
+
+  // Recently Viewed
+  getRecentlyViewed: async () => {
+    const response = await api.get('/recently-viewed/');
+    return response.data;
+  },
+
+  markAsViewed: async (listingId: number) => {
+    const response = await api.post('/recently-viewed/mark_viewed/', {
+      listing_id: listingId,
+    });
+    return response.data;
+  },
+
+  // Saved Searches
+  getSavedSearches: async () => {
+    const response = await api.get('/saved-searches/');
+    return response.data;
+  },
+
+  createSavedSearch: async (data: {
+    name: string;
+    query?: string;
+    category?: number;
+    min_price?: number;
+    max_price?: number;
+    condition?: string;
+    alert_enabled?: boolean;
+  }) => {
+    const response = await api.post('/saved-searches/', data);
+    return response.data;
+  },
+
+  updateSavedSearch: async (id: number, data: any) => {
+    const response = await api.patch(`/saved-searches/${id}/`, data);
+    return response.data;
+  },
+
+  deleteSavedSearch: async (id: number) => {
+    const response = await api.delete(`/saved-searches/${id}/`);
+    return response.data;
+  },
+
+  toggleSearchAlert: async (id: number) => {
+    const response = await api.post(`/saved-searches/${id}/toggle_alert/`);
+    return response.data;
+  },
+
+  checkAlerts: async () => {
+    const response = await api.get('/saved-searches/check_alerts/');
+    return response.data;
+  },
+
+  // Seller Dashboard
+  getSellerDashboard: async () => {
+    const response = await api.get('/seller/dashboard/');
+    return response.data;
+  },
+};
+
+export const searchAPI = {
+  save: async (query: string, categoryId?: number): Promise<any> => {
+    const response = await api.post('/search/save/', {
+      query,
+      category_id: categoryId,
+    });
+    return response.data;
+  },
+  suggestions: async (query: string): Promise<{ suggestions: string[] }> => {
+    const response = await api.get('/search/suggestions/', {
+      params: { q: query },
     });
     return response.data;
   },

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X, Camera } from 'lucide-react';
-import { listingsAPI, categoriesAPI, authAPI } from '@/services/api';
+import { listingsAPI, categoriesAPI, authAPI, aiAPI } from '@/services/api';
 import type { Category, ListingCondition } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import SearchableSelect from '@/components/SearchableSelect';
 
 const CONDITIONS: { value: ListingCondition; label: string }[] = [
   { value: 'new', label: 'New' },
@@ -17,6 +18,8 @@ export default function CreateListing() {
   const { user } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [detectedCategories, setDetectedCategories] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -26,12 +29,27 @@ export default function CreateListing() {
     condition: 'good' as ListingCondition,
   });
 
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
+  const MAX_IMAGES = 15;
 
   useEffect(() => {
     loadCategories();
+    // Load default category suggestions on mount (even without image)
+    loadDefaultSuggestions();
   }, []);
+
+  const loadDefaultSuggestions = async () => {
+    try {
+      // Call analyze-image without image to get default suggestions
+      const result = await aiAPI.analyzeImage();
+      if (result.category_suggestions && result.category_suggestions.length > 0) {
+        setDetectedCategories(result.category_suggestions);
+      }
+    } catch (error) {
+      // Silently fail - defaults are optional
+      console.log('Could not load default suggestions:', error);
+    }
+  };
 
   // If user is not verified, redirect them to the Verify Email flow
   useEffect(() => {
@@ -80,32 +98,103 @@ export default function CreateListing() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesAPI.list();
-      setCategories(data.results || data);
-    } catch (error) {
-      toast.error('Failed to load categories');
+      const response = await categoriesAPI.list();
+      // Handle paginated response or direct array
+      const categoriesList = response.results || (Array.isArray(response) ? response : []);
+      
+      if (categoriesList.length === 0) {
+        console.warn('No categories returned from API. Response:', response);
+        // Show a helpful message but don't block the user
+        toast.error('Categories not available. Please contact support or try refreshing the page.');
+      }
+      
+      setCategories(categoriesList);
+    } catch (error: any) {
+      console.error('Category loading error:', error);
+      const errorMessage = error?.response?.data?.detail || error?.message || 'Failed to load categories';
+      toast.error(`Failed to load categories: ${errorMessage}`);
+      // Set empty array so UI doesn't break
+      setCategories([]);
+    }
+  };
+
+  const analyzeImage = async (imageFile: File) => {
+    try {
+      setIsAnalyzing(true);
+      const result = await aiAPI.analyzeImage(imageFile);
+      
+      // Always set categories (even if empty, defaults will be shown)
+      setDetectedCategories(result.category_suggestions || []);
+      
+      // Store AI-detected tags in localStorage for category prioritization
+      if (result.tags && result.tags.length > 0) {
+        localStorage.setItem('ai_detected_tags', result.tags.join(','));
+      }
+      
+      setIsAnalyzing(false);
+      
+      // Only show success if we got actual AI results (not just defaults)
+      if (result.category_suggestions && result.category_suggestions.length > 0 && !result.description?.includes('temporarily unavailable')) {
+        toast.success(`Detected ${result.category_suggestions.length} potential categor${result.category_suggestions.length > 1 ? 'ies' : 'y'}`);
+      }
+    } catch (error: any) {
+      console.error('Image analysis error:', error);
+      setIsAnalyzing(false);
+      // Don't show error toast - endpoint now always returns 200 with defaults
+      // Categories will still be available from defaults
     }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image must be less than 5MB');
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Check total images won't exceed limit
+    if (images.length + files.length > MAX_IMAGES) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed. You can add ${MAX_IMAGES - images.length} more.`);
+      return;
+    }
+
+    const newImages: { file: File; preview: string }[] = [];
+
+    files.forEach((file) => {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum 15MB per image.`);
         return;
       }
-      setImage(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const imageData = { file, preview: reader.result as string };
+        newImages.push(imageData);
+        
+        // When all images are loaded, update state
+        if (newImages.length === files.length) {
+          setImages([...images, ...newImages]);
+          
+          // Analyze first image if it's the first one
+          if (images.length === 0 && newImages.length > 0) {
+            analyzeImage(newImages[0].file);
+          }
+        }
       };
       reader.readAsDataURL(file);
-    }
+    });
+
+    // Reset input
+    e.target.value = '';
   };
 
-  const handleRemoveImage = () => {
-    setImage(null);
-    setImagePreview('');
+  const handleRemoveImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+    
+    // Reset detected categories if removing first image
+    if (index === 0 && newImages.length > 0) {
+      analyzeImage(newImages[0].file);
+    } else if (newImages.length === 0) {
+      setDetectedCategories([]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,6 +213,11 @@ export default function CreateListing() {
       return;
     }
 
+    if (images.length === 0) {
+      toast.error('Please add at least one image');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const data = new FormData();
@@ -132,8 +226,15 @@ export default function CreateListing() {
       data.append('price', formData.price);
       data.append('category', formData.category);
       data.append('condition', formData.condition);
-      if (image) {
-        data.append('image', image);
+      
+      // Add primary image
+      if (images[0]) {
+        data.append('image', images[0].file);
+      }
+      
+      // Add additional images (up to 14 more)
+      for (let i = 1; i < images.length && i < MAX_IMAGES; i++) {
+        data.append(`additional_images_${i - 1}`, images[i].file);
       }
 
       await listingsAPI.create(data);
@@ -169,28 +270,52 @@ export default function CreateListing() {
         {/* Image Upload */}
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-3">
-            Photos *
+            Photos * {images.length > 0 && `(${images.length}/${MAX_IMAGES})`}
           </label>
-          {imagePreview ? (
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
-              >
-                <X size={18} className="text-gray-900" />
-              </button>
+          
+          {images.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {images.map((img, index) => (
+                <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50">
+                  <img
+                    src={img.preview}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <X size={16} className="text-gray-900" />
+                  </button>
+                  {index === 0 && (
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs rounded">
+                      Primary
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {images.length < MAX_IMAGES && (
+                <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors flex items-center justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <Camera size={24} className="text-gray-400" />
+                </label>
+              )}
             </div>
           ) : (
             <label className="block aspect-square rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
                 className="hidden"
               />
@@ -203,7 +328,7 @@ export default function CreateListing() {
                     Add photos
                   </p>
                   <p className="text-xs text-gray-500">
-                    Upload up to 1 image (max 5MB)
+                    Upload up to {MAX_IMAGES} images (max 15MB each)
                   </p>
                 </div>
               </div>
@@ -233,19 +358,30 @@ export default function CreateListing() {
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2">
             Category *
+            {isAnalyzing && (
+              <span className="ml-2 text-xs text-primary font-normal">
+                (Analyzing image...)
+              </span>
+            )}
           </label>
-          <select
+          <SearchableSelect
+            options={categories}
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200 appearance-none"
-          >
-            <option value="">Select a category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData({ ...formData, category: value })}
+            placeholder={categories.length === 0 ? "Loading categories..." : "Search or select a category..."}
+            detectedCategories={detectedCategories}
+            allowCustom={true}
+          />
+          {categories.length === 0 && (
+            <p className="text-xs text-yellow-600 mt-1">
+              ⚠️ Categories are loading. If this persists, please refresh the page or contact support.
+            </p>
+          )}
+          {detectedCategories.length > 0 && !formData.category && categories.length > 0 && (
+            <p className="text-xs text-primary mt-1">
+              💡 Detected: {detectedCategories.join(', ')} - Click to select or type your own
+            </p>
+          )}
         </div>
 
         {/* Condition */}

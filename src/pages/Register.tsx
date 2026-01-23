@@ -141,7 +141,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="At least 8 characters"
-                  className="input pl-12 pr-14 text-base md:text-lg py-3 md:py-4"
+                  className="input pl-12 pr-16 text-base md:text-lg py-3 md:py-4"
                   required
                   minLength={8}
                 />
@@ -152,14 +152,15 @@ export default function Register() {
                     e.stopPropagation();
                     setShowPassword(!showPassword);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-12 h-12 -mr-1 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none focus:ring-2 focus:ring-primary/20 touch-manipulation"
+                  style={{ minWidth: '48px', minHeight: '48px' }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={0}
                 >
                   {showPassword ? (
-                    <EyeOff size={22} strokeWidth={2.5} className="text-gray-600" />
+                    <EyeOff size={24} strokeWidth={2.5} className="text-gray-700" />
                   ) : (
-                    <Eye size={22} strokeWidth={2.5} className="text-gray-600" />
+                    <Eye size={24} strokeWidth={2.5} className="text-gray-700" />
                   )}
                 </button>
               </div>
@@ -179,7 +180,7 @@ export default function Register() {
                   value={formData.password2}
                   onChange={handleChange}
                   placeholder="Re-enter password"
-                  className="input pl-12 pr-14 text-base md:text-lg py-3 md:py-4"
+                  className="input pl-12 pr-16 text-base md:text-lg py-3 md:py-4"
                   required
                 />
                 <button
@@ -189,14 +190,15 @@ export default function Register() {
                     e.stopPropagation();
                     setShowPassword2(!showPassword2);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-12 h-12 -mr-1 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none focus:ring-2 focus:ring-primary/20 touch-manipulation"
+                  style={{ minWidth: '48px', minHeight: '48px' }}
                   aria-label={showPassword2 ? 'Hide password' : 'Show password'}
                   tabIndex={0}
                 >
                   {showPassword2 ? (
-                    <EyeOff size={22} strokeWidth={2.5} className="text-gray-600" />
+                    <EyeOff size={24} strokeWidth={2.5} className="text-gray-700" />
                   ) : (
-                    <Eye size={22} strokeWidth={2.5} className="text-gray-600" />
+                    <Eye size={24} strokeWidth={2.5} className="text-gray-700" />
                   )}
                 </button>
               </div>
