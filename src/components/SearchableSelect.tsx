@@ -205,10 +205,6 @@ export default function SearchableSelect({
                 );
               })}
             </ul>
-          ) : options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
-              Loading categories...
-            </div>
           ) : (
             <div className="px-4 py-3 text-sm text-gray-500 text-center">
               {allowCustom && searchTerm ? (
