@@ -139,11 +139,12 @@ export const categoriesAPI = {
         hasResults: !!response.data?.results,
         resultsLength: response.data?.results?.length,
         isArray: Array.isArray(response.data),
-        dataType: Array.isArray(response.data) ? 'array' : typeof response.data
+        dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
+        rawData: JSON.stringify(response.data, null, 2)
       });
       
       // Handle both paginated and direct array responses
-      if (response.data?.results) {
+      if (response.data?.results && Array.isArray(response.data.results)) {
         console.log('[api] categoriesAPI.list: Paginated response, returning results');
         return response.data;
       } else if (Array.isArray(response.data)) {
@@ -155,7 +156,12 @@ export const categoriesAPI = {
           previous: null
         };
       } else {
-        console.warn('[api] categoriesAPI.list: Unexpected response format', response.data);
+        console.error('[api] categoriesAPI.list: Unexpected response format', {
+          data: response.data,
+          dataType: typeof response.data,
+          isArray: Array.isArray(response.data),
+          keys: response.data ? Object.keys(response.data) : 'null'
+        });
         return { 
           results: [], 
           count: 0,

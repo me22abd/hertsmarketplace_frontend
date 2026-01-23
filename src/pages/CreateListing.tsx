@@ -111,21 +111,48 @@ export default function CreateListing() {
     try {
       console.log('[CreateListing] Loading categories...');
       const response = await categoriesAPI.list();
-      console.log('[CreateListing] Categories API response:', response);
+      console.log('[CreateListing] Categories API response:', JSON.stringify(response, null, 2));
       
       // Handle paginated response or direct array
-      const categoriesList = response.results || (Array.isArray(response) ? response : []);
-      console.log('[CreateListing] Parsed categories list:', categoriesList);
+      let categoriesList: Category[] = [];
       
-      if (categoriesList.length === 0) {
-        console.warn('[CreateListing] No categories returned from API. Full response:', response);
-        // Show a helpful message but don't block the user
-        toast.error('Categories not available. Please contact support or try refreshing the page.');
-      } else {
-        console.log(`[CreateListing] Successfully loaded ${categoriesList.length} categories`);
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.results)) {
+          categoriesList = response.results;
+        } else if (Array.isArray(response)) {
+          categoriesList = response;
+        } else if (response.results && Array.isArray(response.results)) {
+          categoriesList = response.results;
+        }
       }
       
-      setCategories(categoriesList);
+      console.log('[CreateListing] Parsed categories list:', categoriesList);
+      console.log('[CreateListing] Categories count:', categoriesList.length);
+      
+      if (categoriesList.length === 0) {
+        console.error('[CreateListing] No categories returned from API. Full response:', JSON.stringify(response, null, 2));
+        console.error('[CreateListing] Response type:', typeof response);
+        console.error('[CreateListing] Response keys:', response ? Object.keys(response) : 'null');
+        
+        // Try to load default categories as fallback
+        const defaultCategories: Category[] = [
+          { id: 1, name: 'Electronics', slug: 'electronics', icon: '💻', listing_count: 0 },
+          { id: 2, name: 'Books', slug: 'books', icon: '📚', listing_count: 0 },
+          { id: 3, name: 'Fashion', slug: 'fashion', icon: '👕', listing_count: 0 },
+          { id: 4, name: 'Furniture', slug: 'furniture', icon: '🛋️', listing_count: 0 },
+          { id: 5, name: 'Kitchen', slug: 'kitchen', icon: '🍴', listing_count: 0 },
+          { id: 6, name: 'Sports', slug: 'sports', icon: '⚽', listing_count: 0 },
+          { id: 7, name: 'Stationery', slug: 'stationery', icon: '📝', listing_count: 0 },
+          { id: 8, name: 'Other', slug: 'other', icon: '📦', listing_count: 0 },
+        ];
+        
+        console.warn('[CreateListing] Using fallback default categories');
+        setCategories(defaultCategories);
+        toast.error('Could not load categories from server. Using default categories.');
+      } else {
+        console.log(`[CreateListing] Successfully loaded ${categoriesList.length} categories`);
+        setCategories(categoriesList);
+      }
     } catch (error: any) {
       console.error('[CreateListing] Category loading error:', {
         error,
@@ -133,20 +160,33 @@ export default function CreateListing() {
         response: error?.response?.data,
         status: error?.response?.status,
         isNetworkError: error?.isNetworkError,
-        isTimeout: error?.isTimeout
+        isTimeout: error?.isTimeout,
+        stack: error?.stack
       });
+      
+      // Use fallback categories on error
+      const defaultCategories: Category[] = [
+        { id: 1, name: 'Electronics', slug: 'electronics', icon: '💻', listing_count: 0 },
+        { id: 2, name: 'Books', slug: 'books', icon: '📚', listing_count: 0 },
+        { id: 3, name: 'Fashion', slug: 'fashion', icon: '👕', listing_count: 0 },
+        { id: 4, name: 'Furniture', slug: 'furniture', icon: '🛋️', listing_count: 0 },
+        { id: 5, name: 'Kitchen', slug: 'kitchen', icon: '🍴', listing_count: 0 },
+        { id: 6, name: 'Sports', slug: 'sports', icon: '⚽', listing_count: 0 },
+        { id: 7, name: 'Stationery', slug: 'stationery', icon: '📝', listing_count: 0 },
+        { id: 8, name: 'Other', slug: 'other', icon: '📦', listing_count: 0 },
+      ];
+      
+      setCategories(defaultCategories);
       
       const errorMessage = error?.response?.data?.detail || error?.message || 'Failed to load categories';
       
       // Don't show toast for network errors that might be temporary
       if (!error?.isNetworkError && !error?.isTimeout) {
-        toast.error(`Failed to load categories: ${errorMessage}`);
+        toast.error(`Failed to load categories: ${errorMessage}. Using default categories.`);
       } else {
-        console.warn('[CreateListing] Network error loading categories, will retry silently');
+        console.warn('[CreateListing] Network error loading categories, using fallback');
+        toast.error('Network error loading categories. Using default categories.');
       }
-      
-      // Set empty array so UI doesn't break
-      setCategories([]);
     }
   };
 
