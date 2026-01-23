@@ -60,7 +60,13 @@ api.interceptors.response.use(
 
     // Handle network errors (backend down, CORS issues, etc.)
     if (!error.response && error.request) {
-      const networkError = new Error('Network error: Cannot reach the server. The backend may be down or unreachable.');
+      // Check if it's a CORS error or connection issue
+      const isCorsError = error.message?.includes('CORS') || error.message?.includes('Network Error');
+      const errorMessage = isCorsError 
+        ? 'Connection error: Please check your internet connection and try again.'
+        : `Cannot connect to server. Please check:\n1. Your internet connection\n2. The backend server is running\n3. API URL: ${API_BASE_URL}`;
+      
+      const networkError = new Error(errorMessage);
       (networkError as any).isNetworkError = true;
       return Promise.reject(networkError);
     }
@@ -145,6 +151,7 @@ export const listingsAPI = {
     max_price?: number;
     ordering?: string;
     page?: number;
+    ai_detected?: string;
   }): Promise<PaginatedResponse<Listing>> => {
     const response = await api.get<PaginatedResponse<Listing>>('/listings/', { params });
     return response.data;
@@ -301,6 +308,35 @@ export const reportsAPI = {
       listing: listingId,
       reason,
       description,
+    });
+    return response.data;
+  },
+};
+
+// AI API
+export const aiAPI = {
+  analyzeImage: async (imageFile: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    const response = await api.post('/ai/analyze-image/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+};
+
+// Search API
+export const searchAPI = {
+  save: async (query: string, categoryId?: number): Promise<any> => {
+    const response = await api.post('/search/save/', {
+      query,
+      category_id: categoryId,
+    });
+    return response.data;
+  },
+  suggestions: async (query: string): Promise<{ suggestions: string[] }> => {
+    const response = await api.get('/search/suggestions/', {
+      params: { q: query },
     });
     return response.data;
   },
