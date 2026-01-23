@@ -348,6 +348,139 @@ export const aiAPI = {
 };
 
 // Search API
+export const premiumAPI = {
+  // AI Price Suggestions
+  suggestPrice: async (data: {
+    title?: string;
+    description?: string;
+    category?: number | string;
+    condition?: string;
+    image?: File;
+  }) => {
+    const formData = new FormData();
+    if (data.title) formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (data.category) formData.append('category', String(data.category));
+    if (data.condition) formData.append('condition', data.condition);
+    if (data.image) formData.append('image', data.image);
+
+    const response = await api.post('/ai/suggest-price/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Generate Listing Content
+  generateContent: async (image: File, category?: number | string) => {
+    const formData = new FormData();
+    formData.append('image', image);
+    if (category) formData.append('category', String(category));
+
+    const response = await api.post('/ai/generate-content/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Upload Avatar
+  uploadAvatar: async (avatarUrl?: string, profilePhoto?: File) => {
+    const formData = new FormData();
+    if (avatarUrl) formData.append('avatar_url', avatarUrl);
+    if (profilePhoto) formData.append('profile_photo', profilePhoto);
+
+    const response = await api.post('/profile/upload-avatar/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Draft Listings
+  getDrafts: async () => {
+    const response = await api.get('/drafts/');
+    return response.data;
+  },
+
+  createDraft: async (data: {
+    title?: string;
+    description?: string;
+    price?: number;
+    category?: number;
+    condition?: string;
+    images_data?: any[];
+  }) => {
+    const response = await api.post('/drafts/', data);
+    return response.data;
+  },
+
+  updateDraft: async (id: number, data: any) => {
+    const response = await api.patch(`/drafts/${id}/`, data);
+    return response.data;
+  },
+
+  deleteDraft: async (id: number) => {
+    const response = await api.delete(`/drafts/${id}/`);
+    return response.data;
+  },
+
+  // Recently Viewed
+  getRecentlyViewed: async () => {
+    const response = await api.get('/recently-viewed/');
+    return response.data;
+  },
+
+  markAsViewed: async (listingId: number) => {
+    const response = await api.post('/recently-viewed/mark_viewed/', {
+      listing_id: listingId,
+    });
+    return response.data;
+  },
+
+  // Saved Searches
+  getSavedSearches: async () => {
+    const response = await api.get('/saved-searches/');
+    return response.data;
+  },
+
+  createSavedSearch: async (data: {
+    name: string;
+    query?: string;
+    category?: number;
+    min_price?: number;
+    max_price?: number;
+    condition?: string;
+    alert_enabled?: boolean;
+  }) => {
+    const response = await api.post('/saved-searches/', data);
+    return response.data;
+  },
+
+  updateSavedSearch: async (id: number, data: any) => {
+    const response = await api.patch(`/saved-searches/${id}/`, data);
+    return response.data;
+  },
+
+  deleteSavedSearch: async (id: number) => {
+    const response = await api.delete(`/saved-searches/${id}/`);
+    return response.data;
+  },
+
+  toggleSearchAlert: async (id: number) => {
+    const response = await api.post(`/saved-searches/${id}/toggle_alert/`);
+    return response.data;
+  },
+
+  checkAlerts: async () => {
+    const response = await api.get('/saved-searches/check_alerts/');
+    return response.data;
+  },
+
+  // Seller Dashboard
+  getSellerDashboard: async () => {
+    const response = await api.get('/seller/dashboard/');
+    return response.data;
+  },
+};
+
 export const searchAPI = {
   save: async (query: string, categoryId?: number): Promise<any> => {
     const response = await api.post('/search/save/', {
