@@ -432,53 +432,72 @@ export default function ListingDetail() {
               </div>
             </div>
             <div className="p-4">
-              {/* Rating Summary */}
-              <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-1">{averageRating}</div>
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        className={i < Math.floor(averageRating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
-                      />
+              {isLoadingReviews ? (
+                <div className="text-center py-8 text-gray-500">Loading reviews...</div>
+              ) : totalReviews === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No reviews yet</p>
+                  <p className="text-sm text-gray-400 mt-2">Be the first to review this seller!</p>
+                </div>
+              ) : (
+                <>
+                  {/* Rating Summary */}
+                  <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-gray-900 mb-1">
+                        {averageRating.toFixed(1)}
+                      </div>
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={16}
+                            className={i < Math.floor(averageRating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Based on {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* All Reviews */}
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-900">
+                                {review.reviewer_name}
+                              </span>
+                              {review.is_verified_purchase && (
+                                <Check size={14} className="text-primary" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={12}
+                                  className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {formatRelativeTime(review.created_at)}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-gray-600">{review.comment}</p>
+                        )}
+                      </div>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-600">Based on 2 reviews</p>
-                </div>
-              </div>
-
-              {/* All Reviews */}
-              <div className="space-y-3">
-                {MOCK_REVIEWS.map((review) => (
-                  <div key={review.id} className="bg-gray-50 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {review.author}
-                          </span>
-                          {review.verified && (
-                            <Check size={14} className="text-primary" />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={12}
-                              className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-500">{review.date}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>

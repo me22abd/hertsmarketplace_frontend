@@ -86,17 +86,7 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
 
         {/* Content */}
         <div className="p-3">
-          {/* Rating */}
-          <div className="flex items-center gap-1 mb-1.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                size={12}
-                className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}
-              />
-            ))}
-            <span className="text-xs text-gray-500 ml-0.5">({reviewCount})</span>
-          </div>
+          {/* Rating - Removed fake ratings, will show real reviews when available from backend */}
 
           {/* Seller/Category */}
           {listing.seller?.profile?.name && (
