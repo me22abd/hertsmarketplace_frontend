@@ -19,6 +19,13 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
   });
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(user?.profile?.profile_photo || '');
+  
+  // Update preview when user changes or modal opens
+  useEffect(() => {
+    if (user?.profile?.profile_photo) {
+      setPhotoPreview(user.profile.profile_photo);
+    }
+  }, [user?.profile?.profile_photo, isOpen]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
