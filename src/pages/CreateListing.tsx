@@ -81,10 +81,13 @@ export default function CreateListing() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesAPI.list();
-      setCategories(data.results || data);
+      const response = await categoriesAPI.list();
+      // Handle paginated response or direct array
+      const categoriesList = response.results || (Array.isArray(response) ? response : []);
+      setCategories(categoriesList);
     } catch (error) {
       toast.error('Failed to load categories');
+      console.error('Category loading error:', error);
     }
   };
 
