@@ -350,11 +350,16 @@ export default function CreateListing() {
             options={categories}
             value={formData.category}
             onChange={(value) => setFormData({ ...formData, category: value })}
-            placeholder="Search or select a category..."
+            placeholder={categories.length === 0 ? "Loading categories..." : "Search or select a category..."}
             detectedCategories={detectedCategories}
             allowCustom={true}
           />
-          {detectedCategories.length > 0 && !formData.category && (
+          {categories.length === 0 && (
+            <p className="text-xs text-yellow-600 mt-1">
+              ⚠️ Categories are loading. If this persists, please refresh the page or contact support.
+            </p>
+          )}
+          {detectedCategories.length > 0 && !formData.category && categories.length > 0 && (
             <p className="text-xs text-primary mt-1">
               💡 Detected: {detectedCategories.join(', ')} - Click to select or type your own
             </p>
