@@ -143,18 +143,19 @@ export const categoriesAPI = {
         rawData: JSON.stringify(response.data, null, 2)
       });
       
-      // Handle both paginated and direct array responses
-      if (response.data?.results && Array.isArray(response.data.results)) {
-        console.log('[api] categoriesAPI.list: Paginated response, returning results');
-        return response.data;
-      } else if (Array.isArray(response.data)) {
-        console.log('[api] categoriesAPI.list: Array response, wrapping in results');
+      // Categories endpoint now returns direct array (pagination disabled)
+      // Handle both paginated (legacy) and direct array responses
+      if (Array.isArray(response.data)) {
+        console.log('[api] categoriesAPI.list: Direct array response');
         return { 
           results: response.data, 
           count: response.data.length,
           next: null,
           previous: null
         };
+      } else if (response.data?.results && Array.isArray(response.data.results)) {
+        console.log('[api] categoriesAPI.list: Paginated response (legacy)');
+        return response.data;
       } else {
         console.error('[api] categoriesAPI.list: Unexpected response format', {
           data: response.data,
