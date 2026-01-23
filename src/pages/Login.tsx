@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '@/utils/helpers';
@@ -14,6 +14,7 @@ export default function Login() {
     email: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || '/home';
 
@@ -78,17 +79,34 @@ export default function Login() {
                 Password
               </label>
               <div className="relative">
-                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="input pl-12 text-base md:text-lg py-3 md:py-4"
+                  className="input pl-12 pr-14 text-base md:text-lg py-3 md:py-4"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={0}
+                >
+                  {showPassword ? (
+                    <EyeOff size={22} strokeWidth={2.5} className="text-gray-600" />
+                  ) : (
+                    <Eye size={22} strokeWidth={2.5} className="text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
 
