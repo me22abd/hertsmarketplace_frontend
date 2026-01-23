@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Camera, Upload } from 'lucide-react';
 import { profileAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
@@ -23,8 +23,8 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image must be less than 5MB');
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error('Image must be less than 15MB');
         return;
       }
       setProfilePhoto(file);
@@ -46,8 +46,17 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
       if (formData.course) data.append('course', formData.course);
       if (profilePhoto) data.append('profile_photo', profilePhoto);
 
-      await profileAPI.update(data as any);
+      const updatedProfile = await profileAPI.update(data as any);
       toast.success('Profile updated successfully!');
+      
+      // Update photo preview with the server response URL if available
+      if (updatedProfile.profile_photo) {
+        setPhotoPreview(updatedProfile.profile_photo);
+      }
+      
+      // Clear the file input so the same file can be selected again if needed
+      setProfilePhoto(null);
+      
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -116,7 +125,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
                     className="hidden"
                   />
                 </label>
-                <p className="text-xs text-gray-500 mt-1">JPG, PNG, max 5MB</p>
+                <p className="text-xs text-gray-500 mt-1">JPG, PNG, max 15MB</p>
               </div>
             </div>
           </div>
