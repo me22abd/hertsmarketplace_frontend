@@ -315,10 +315,13 @@ export const reportsAPI = {
 
 // AI API
 export const aiAPI = {
-  analyzeImage: async (imageFile: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
+  analyzeImage: async (imageFile?: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
     try {
       const formData = new FormData();
-      formData.append('image', imageFile);
+      // Image is optional - endpoint returns defaults if no image
+      if (imageFile && imageFile.size > 0) {
+        formData.append('image', imageFile);
+      }
       const response = await api.post('/ai/analyze-image/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -326,9 +329,20 @@ export const aiAPI = {
     } catch (error: any) {
       // Handle 404 specifically (endpoint not deployed yet)
       if (error.response?.status === 404) {
-        throw new Error('AI analysis is currently unavailable. The feature is being deployed. Please try again in a few minutes.');
+        // Return defaults instead of throwing error
+        return {
+          tags: [],
+          category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
+          description: 'AI analysis unavailable. Please select a category manually.'
+        };
       }
-      throw error;
+      // For other errors, return defaults instead of throwing
+      console.error('AI analysis error:', error);
+      return {
+        tags: [],
+        category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
+        description: 'Could not analyze image. Please select a category manually.'
+      };
     }
   },
 };

@@ -34,7 +34,22 @@ export default function CreateListing() {
 
   useEffect(() => {
     loadCategories();
+    // Load default category suggestions on mount (even without image)
+    loadDefaultSuggestions();
   }, []);
+
+  const loadDefaultSuggestions = async () => {
+    try {
+      // Call analyze-image without image to get default suggestions
+      const result = await aiAPI.analyzeImage();
+      if (result.category_suggestions && result.category_suggestions.length > 0) {
+        setDetectedCategories(result.category_suggestions);
+      }
+    } catch (error) {
+      // Silently fail - defaults are optional
+      console.log('Could not load default suggestions:', error);
+    }
+  };
 
   // If user is not verified, redirect them to the Verify Email flow
   useEffect(() => {
@@ -108,6 +123,7 @@ export default function CreateListing() {
       setIsAnalyzing(true);
       const result = await aiAPI.analyzeImage(imageFile);
       
+      // Always set categories (even if empty, defaults will be shown)
       setDetectedCategories(result.category_suggestions || []);
       
       // Store AI-detected tags in localStorage for category prioritization
@@ -117,20 +133,15 @@ export default function CreateListing() {
       
       setIsAnalyzing(false);
       
-      if (result.category_suggestions && result.category_suggestions.length > 0) {
+      // Only show success if we got actual AI results (not just defaults)
+      if (result.category_suggestions && result.category_suggestions.length > 0 && !result.description?.includes('temporarily unavailable')) {
         toast.success(`Detected ${result.category_suggestions.length} potential categor${result.category_suggestions.length > 1 ? 'ies' : 'y'}`);
       }
     } catch (error: any) {
       console.error('Image analysis error:', error);
       setIsAnalyzing(false);
-      
-      // Show user-friendly error message
-      const errorMessage = error?.message || 'Failed to analyze image';
-      if (errorMessage.includes('currently unavailable') || errorMessage.includes('being deployed')) {
-        toast.error('AI analysis is being deployed. You can still select a category manually.');
-      } else {
-        toast.error('Failed to analyze image. You can still select a category manually.');
-      }
+      // Don't show error toast - endpoint now always returns 200 with defaults
+      // Categories will still be available from defaults
     }
   };
 
