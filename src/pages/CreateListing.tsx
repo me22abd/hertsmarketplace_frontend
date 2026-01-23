@@ -5,6 +5,7 @@ import { listingsAPI, categoriesAPI, authAPI } from '@/services/api';
 import type { Category, ListingCondition } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import SearchableSelect from '@/components/SearchableSelect';
 
 const CONDITIONS: { value: ListingCondition; label: string }[] = [
   { value: 'new', label: 'New' },
@@ -234,18 +235,12 @@ export default function CreateListing() {
           <label className="block text-sm font-semibold text-gray-900 mb-2">
             Category *
           </label>
-          <select
+          <SearchableSelect
+            options={categories}
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200 appearance-none"
-          >
-            <option value="">Select a category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData({ ...formData, category: value })}
+            placeholder="Search or select a category..."
+          />
         </div>
 
         {/* Condition */}
