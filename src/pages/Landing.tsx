@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Truck, Smartphone, Shield, GraduationCap, Star, ShoppingBag } from 'lucide-react';
+import { Search, ShoppingCart, Truck, Smartphone, Shield, GraduationCap, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Logo from '@/components/Logo';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -26,18 +27,8 @@ export default function Landing() {
         className="border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 safe-area-top"
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-6 py-4 sm:py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-              className="w-9 h-9 sm:w-11 sm:h-11 bg-primary rounded-xl flex items-center justify-center group-hover:bg-primary-dark transition-colors"
-            >
-              <ShoppingBag className="text-white" size={20} />
-            </motion.div>
-            <div className="text-lg sm:text-2xl font-bold">
-              <span className="text-primary">Herts</span>
-              <span className="text-gray-800">Marketplace</span>
-            </div>
+          <Link to="/" className="group">
+            <Logo size="md" />
           </Link>
           <div className="flex items-center gap-3 sm:gap-6">
             <Link to="/login" className="text-sm sm:text-base text-gray-600 hover:text-primary font-medium transition-colors">
@@ -471,13 +462,7 @@ export default function Landing() {
             {/* Logo and Brand */}
             <div className="md:col-span-1">
               <Link to="/" className="flex items-center gap-3 mb-4 group">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center group-hover:bg-primary-dark transition-colors">
-                  <ShoppingBag className="text-white" size={20} />
-                </div>
-                <div className="text-xl font-bold">
-                  <span className="text-primary">Herts</span>
-                  <span className="text-gray-800">Marketplace</span>
-                </div>
+                <Logo size="sm" />
               </Link>
               <p className="text-sm text-gray-600">
                 Built for University of Hertfordshire students
