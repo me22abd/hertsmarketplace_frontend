@@ -13,6 +13,8 @@ export interface UserProfile {
   name: string;
   course: string;
   profile_photo?: string;
+  avatar_url?: string | null;
+  avatar?: string | null;
   created_at: string;
   updated_at: string;
 }

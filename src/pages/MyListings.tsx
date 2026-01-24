@@ -178,12 +178,15 @@ export default function MyListings() {
       {/* Menu Modal */}
       {showMenu && selectedListing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowMenu(false)}>
-          <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Manage Listing</h2>
-              
-              <div className="space-y-2 mb-6">
+          <div
+            className="bg-white w-full max-w-md mx-auto rounded-t-3xl max-h-[80vh] overflow-y-auto safe-area-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 pb-8">
+              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+              <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">Manage Listing</h2>
+
+              <div className="space-y-2 mb-2">
                 <button
                   onClick={() => navigate(`/listings/${selectedListing.id}`)}
                   className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3"
@@ -215,6 +218,10 @@ export default function MyListings() {
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
                   <span className="text-gray-900">Mark as Sold</span>
                 </button>
+              </div>
+
+              {/* Keep delete action pinned with extra spacing so it's always visible / reachable */}
+              <div className="mt-4 pt-2 border-t border-gray-100">
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -226,6 +233,7 @@ export default function MyListings() {
                   <span className="text-red-600">Delete Listing</span>
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -264,15 +272,19 @@ export default function MyListings() {
 
 // Listing Item Component
 function ListingItem({ listing, onMenuClick }: { listing: Listing; onMenuClick: () => void }) {
+  const [imageError, setImageError] = useState(false);
+  const imageSrc = !imageError ? (listing.image_url || listing.image) : null;
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <div className="flex gap-3 p-3">
         <div className="w-20 h-20 rounded-xl bg-gray-50 flex-shrink-0 overflow-hidden">
-          {listing.image ? (
+          {imageSrc ? (
             <img
-              src={listing.image}
+              src={imageSrc}
               alt={listing.title}
               className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-2xl">

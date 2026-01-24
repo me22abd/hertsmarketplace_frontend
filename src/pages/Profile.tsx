@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { authAPI } from '@/services/api';
+import { authAPI, listingsAPI, savedListingsAPI, messagesAPI, premiumAPI } from '@/services/api';
 import BottomNav from '@/components/BottomNav';
 import EditProfileModal from '@/components/EditProfileModal';
 import { getInitials } from '@/utils/helpers';
@@ -16,6 +16,19 @@ export default function Profile() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerificationInput, setShowVerificationInput] = useState(false);
+  const [stats, setStats] = useState<{
+    totalListings: number;
+    savedCount: number;
+    messagesCount: number;
+    trustScore: number | null;
+    isLoading: boolean;
+  }>({
+    totalListings: 0,
+    savedCount: 0,
+    messagesCount: 0,
+    trustScore: null,
+    isLoading: true,
+  });
 
   const handleLogout = () => {
     logout();
@@ -75,6 +88,71 @@ export default function Profile() {
       setIsVerifying(false);
     }
   };
+
+  // Load basic analytics for the profile quick stats
+  useEffect(() => {
+    if (!user) return;
+
+    const loadStats = async () => {
+      try {
+        const [myListingsRes, savedRes, conversationsRes, dashboardRes] = await Promise.allSettled([
+          listingsAPI.myListings(),
+          savedListingsAPI.list(),
+          messagesAPI.conversations(),
+          premiumAPI.getSellerDashboard(),
+        ]);
+
+        let totalListings = stats.totalListings;
+        let savedCount = stats.savedCount;
+        let messagesCount = stats.messagesCount;
+        let trustScore = stats.trustScore;
+
+        if (myListingsRes.status === 'fulfilled') {
+          const data: any = myListingsRes.value;
+          const arr = Array.isArray(data?.results) ? data.results : data;
+          if (Array.isArray(arr)) {
+            totalListings = arr.length;
+          }
+        }
+
+        if (savedRes.status === 'fulfilled') {
+          const data: any = savedRes.value;
+          const arr = Array.isArray(data) ? data : data?.results;
+          if (Array.isArray(arr)) {
+            savedCount = arr.length;
+          }
+        }
+
+        if (conversationsRes.status === 'fulfilled') {
+          const arr: any = conversationsRes.value;
+          if (Array.isArray(arr)) {
+            messagesCount = arr.length;
+          }
+        }
+
+        if (dashboardRes.status === 'fulfilled') {
+          const dash: any = dashboardRes.value;
+          if (dash && typeof dash.trust_score === 'number') {
+            trustScore = dash.trust_score;
+          }
+        }
+
+        setStats({
+          totalListings,
+          savedCount,
+          messagesCount,
+          trustScore,
+          isLoading: false,
+        });
+      } catch (error) {
+        console.error('Failed to load profile stats', error);
+        setStats(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   if (!user) {
     navigate('/login');
@@ -149,9 +227,9 @@ export default function Profile() {
         {/* User Info Card */}
         <div className="bg-white rounded-2xl p-6">
           <div className="flex items-center gap-4 mb-6">
-            {user.profile?.profile_photo ? (
+            {user.profile?.avatar || user.profile?.profile_photo ? (
               <img
-                src={user.profile.profile_photo}
+                src={user.profile.avatar || user.profile.profile_photo}
                 alt={user.profile.name}
                 className="w-20 h-20 rounded-full object-cover"
               />
@@ -181,20 +259,39 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-2xl p-4 text-center">
             <Package size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">0</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.isLoading ? '–' : stats.totalListings}
+            </div>
             <div className="text-xs text-gray-500">Listings</div>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center">
             <Heart size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">0</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.isLoading ? '–' : stats.savedCount}
+            </div>
             <div className="text-xs text-gray-500">Saved</div>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center">
             <MessageCircle size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">0</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.isLoading ? '–' : stats.messagesCount}
+            </div>
             <div className="text-xs text-gray-500">Messages</div>
           </div>
         </div>
+
+        {/* Trust score card (optional analytics) */}
+        {stats.trustScore !== null && (
+          <div className="bg-white rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield size={20} className="text-primary" />
+              <span className="text-sm font-semibold text-gray-900">Trust score</span>
+            </div>
+            <span className="text-lg font-bold text-gray-900">
+              {Math.round(stats.trustScore)}%
+            </span>
+          </div>
+        )}
 
         {/* My Activity */}
         <div className="bg-white rounded-2xl overflow-hidden">
