@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Star, ChevronRight, X, Check } from 'lucide-react';
-import { listingsAPI, reviewsAPI } from '@/services/api';
+import { listingsAPI, reviewsAPI, premiumAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';
 import { useAuthStore } from '@/store/authStore';
@@ -61,6 +61,40 @@ export default function ListingDetail() {
       const data = await listingsAPI.get(Number(id));
       setListing(data);
       setIsSaved(data.is_saved || false);
+
+      // Record as recently viewed (local + backend) when loaded
+      try {
+        // Local storage (up to 30 items, most recent first)
+        const STORAGE_KEY = 'recently_viewed_listings';
+        const raw = localStorage.getItem(STORAGE_KEY);
+        let items: any[] = [];
+        if (raw) {
+          try {
+            items = JSON.parse(raw);
+          } catch {
+            items = [];
+          }
+        }
+        const sanitized = {
+          id: data.id,
+          title: data.title,
+          price: data.price,
+          image: data.image,
+          image_url: data.image_url,
+        };
+        const filtered = items.filter((it) => it.id !== data.id);
+        const updated = [sanitized, ...filtered].slice(0, 30);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+        // Sync with backend if logged in
+        if (user) {
+          premiumAPI.markAsViewed(data.id).catch(() => {
+            // swallow errors – recently viewed should never block page
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to record recently viewed listing', e);
+      }
     } catch (error: any) {
       toast.error('Failed to load listing');
       navigate('/home');
