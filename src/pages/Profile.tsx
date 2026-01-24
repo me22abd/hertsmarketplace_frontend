@@ -339,7 +339,10 @@ export default function Profile() {
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Settings</h3>
           </div>
-          <button className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50">
+          <button
+            onClick={() => navigate('/notifications')}
+            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                 <Bell size={20} className="text-gray-700" />
