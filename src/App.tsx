@@ -18,7 +18,7 @@ import CreateListing from '@/pages/CreateListing';
 import Messages from '@/pages/Messages';
 import SavedListings from '@/pages/SavedListings';
 import Profile from '@/pages/Profile';
-import Notifications from '@/ pages/Notifications';
+import Notifications from '@/pages/Notifications';
 import EditProfile from '@/pages/EditProfile';
 import MyListings from '@/pages/MyListings';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
