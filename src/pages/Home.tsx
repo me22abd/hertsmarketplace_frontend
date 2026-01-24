@@ -9,6 +9,30 @@ import BottomNav from '@/components/BottomNav';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
+function NewListingImage({ listing }: { listing: Listing }) {
+  const [imageError, setImageError] = useState(false);
+
+  const src = (listing.image_url as string) || listing.image;
+
+  if (src && !imageError) {
+    return (
+      <img
+        src={src}
+        alt={listing.title}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center text-4xl">
+      📦
+    </div>
+  );
+}
+
 export default function Home() {
   const { user } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -190,17 +214,8 @@ export default function Home() {
                     NEW
                   </div>
                   <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-2">
-                    {listing.image ? (
-                      <img
-                        src={listing.image}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">
-                        📦
-                      </div>
-                    )}
+                    {/* Prefer cloud image_url, fall back to image, then to placeholder */}
+                    <NewListingImage listing={listing} />
                   </div>
                   <h3 className="text-xs font-medium text-gray-900 truncate">{listing.title}</h3>
                   <p className="text-sm font-bold text-gray-900">£{listing.price}</p>
