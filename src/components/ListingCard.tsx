@@ -13,6 +13,7 @@ interface Props {
 export default function ListingCard({ listing, onSaveToggle }: Props) {
   const [isSaved, setIsSaved] = useState(listing.is_saved || false);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleSaveToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,12 +48,22 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100">
-          {listing.image ? (
+          {/* Prefer cloud image_url, fall back to image, then to placeholder */}
+          {listing.image_url && !imageError ? (
+            <img
+              src={listing.image_url}
+              alt={listing.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : listing.image && !imageError ? (
             <img
               src={listing.image}
               alt={listing.title}
               className="w-full h-full object-cover"
               loading="lazy"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-6xl">

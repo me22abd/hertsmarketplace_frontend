@@ -36,6 +36,7 @@ export interface Listing {
   condition: ListingCondition;
   status: ListingStatus;
   image: string;
+  image_url?: string | null;
   is_sold: boolean;
   is_saved?: boolean;
   is_deleted?: boolean;

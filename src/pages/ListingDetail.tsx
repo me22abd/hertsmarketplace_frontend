@@ -126,6 +126,9 @@ export default function ListingDetail() {
   const averageRating = reviewStats?.average_rating || 0;
   const totalReviews = reviewStats?.total_reviews || 0;
 
+  // Prefer cloud URL when available
+  const mainImage = listing.image_url || listing.image;
+
   return (
     <div className="min-h-screen bg-white pb-24">
       {/* Header */}
@@ -146,9 +149,9 @@ export default function ListingDetail() {
       {/* Image Gallery */}
       <div className="w-full max-w-md mx-auto">
         <div className="relative aspect-square bg-gray-50">
-          {listing.image && !imageError ? (
+          {mainImage && !imageError ? (
             <img
-              src={listing.image}
+              src={mainImage}
               alt={listing.title}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
