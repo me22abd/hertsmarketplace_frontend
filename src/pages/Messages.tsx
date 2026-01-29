@@ -130,9 +130,30 @@ export default function Messages() {
                   onClick={() => setSelectedConversation(conversation)}
                   className="w-full px-4 py-4 flex items-start gap-3 active:bg-gray-50 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">
-                    {getInitials(conversation.other_user.profile.name)}
-                  </div>
+                  {(() => {
+                    // Get seller profile photo - try avatar, avatar_url, or profile_photo
+                    const profile = conversation.other_user.profile;
+                    const profilePhoto = profile.avatar || profile.avatar_url || profile.profile_photo;
+                    return profilePhoto ? (
+                      <img
+                        src={profilePhoto}
+                        alt={conversation.other_user.profile.name}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          // Fallback to initials if image fails to load
+                          const initials = getInitials(conversation.other_user.profile.name);
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = `<div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">${initials}</div>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">
+                        {getInitials(conversation.other_user.profile.name)}
+                      </div>
+                    );
+                  })()}
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-semibold text-gray-900 truncate">
@@ -180,12 +201,33 @@ export default function Messages() {
               <button onClick={() => setSelectedConversation(null)} className="touch-target -ml-2">
                 <ArrowLeft size={24} className="text-gray-900" />
               </button>
-              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm">
-                {getInitials(selectedConversation.other_user.profile.name)}
-              </div>
+              {(() => {
+                // Get seller profile photo - try avatar, avatar_url, or profile_photo
+                const profile = selectedConversation.other_user.profile;
+                const profilePhoto = profile.avatar || profile.avatar_url || profile.profile_photo;
+                return profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt={selectedConversation.other_user.profile.name}
+                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      const initials = getInitials(selectedConversation.other_user.profile.name);
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                    {getInitials(selectedConversation.other_user.profile.name)}
+                  </div>
+                );
+              })()}
               <div>
                 <h2 className="font-semibold text-gray-900">
-                  {selectedConversation.other_user.profile.name}
+                  {selectedConversation.other_user.profile.name || selectedConversation.other_user.email}
                 </h2>
                 <p className="text-xs text-gray-500">
                   {selectedConversation.other_user.profile.course || 'University of Hertfordshire'}
@@ -203,15 +245,28 @@ export default function Messages() {
       <div className="w-full max-w-md mx-auto px-4 py-3 bg-gray-50 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
-            {selectedConversation.listing.image ? (
-              <img
-                src={selectedConversation.listing.image}
-                alt={selectedConversation.listing.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl">📦</span>
-            )}
+            {(() => {
+              // Try image_url first (cloud storage), then primary_image, then image
+              const imageUrl = selectedConversation.listing.image_url || 
+                              (selectedConversation.listing as any).primary_image || 
+                              selectedConversation.listing.image;
+              return imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={selectedConversation.listing.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to emoji if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.parentElement) {
+                      e.currentTarget.parentElement.innerHTML = '<span class="text-2xl">📦</span>';
+                    }
+                  }}
+                />
+              ) : (
+                <span className="text-2xl">📦</span>
+              );
+            })()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">
