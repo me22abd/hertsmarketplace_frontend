@@ -10,6 +10,8 @@ import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import VerifyEmail from '@/pages/VerifyEmail';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import Home from '@/pages/Home';
 import Search from '@/pages/Search';
 import Bag from '@/pages/Bag';
@@ -82,6 +84,14 @@ function App() {
         <Route
           path="/verify-email"
           element={<VerifyEmail />}
+        />
+        <Route
+          path="/forgot-password"
+          element={isAuthenticated ? <Navigate to="/home" replace /> : <ForgotPassword />}
+        />
+        <Route
+          path="/reset-password"
+          element={isAuthenticated ? <Navigate to="/home" replace /> : <ResetPassword />}
         />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />

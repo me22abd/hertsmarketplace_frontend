@@ -111,6 +111,16 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Forgot Password Link */}
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm md:text-base text-primary font-medium hover:underline"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
             {/* Submit */}
             <button type="submit" disabled={isLoading} className="btn-primary w-full mt-8 md:mt-10 py-3 md:py-4 text-base md:text-lg font-semibold">
               {isLoading ? (

@@ -125,6 +125,16 @@ export const authAPI = {
     const response = await api.post('/auth/verify-email/', { email, code });
     return response.data;
   },
+
+  requestPasswordReset: async (email: string): Promise<{ message: string; email_sent: boolean; expires_in_minutes?: number }> => {
+    const response = await api.post('/auth/request-password-reset/', { email });
+    return response.data;
+  },
+
+  resetPassword: async (email: string, code: string, password: string, password2: string): Promise<{ message: string; success: boolean }> => {
+    const response = await api.post('/auth/reset-password/', { email, code, password, password2 });
+    return response.data;
+  },
 };
 
 // Categories API
