@@ -9,6 +9,7 @@ interface SearchableSelectProps {
   className?: string;
   detectedCategories?: string[];
   allowCustom?: boolean;
+  onCategoryCreated?: () => void; // Callback to refresh categories after creation
 }
 
 export default function SearchableSelect({
@@ -19,6 +20,7 @@ export default function SearchableSelect({
   className = '',
   detectedCategories = [],
   allowCustom = false,
+  onCategoryCreated,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,17 +38,22 @@ export default function SearchableSelect({
       option.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // If we have detected categories and search term is empty, prioritize them
-    if (detectedCategories.length > 0 && !searchTerm) {
+    // If we have detected categories, prioritize them (even with search term)
+    if (detectedCategories.length > 0) {
       const detected = filtered.filter(opt => 
-        detectedCategories.some(detected => 
-          opt.name.toLowerCase().includes(detected.toLowerCase())
-        )
+        detectedCategories.some(detectedCat => {
+          const optName = opt.name.toLowerCase();
+          const detectedName = detectedCat.toLowerCase();
+          // Match if category name contains detected term or vice versa
+          return optName.includes(detectedName) || detectedName.includes(optName);
+        })
       );
       const others = filtered.filter(opt => 
-        !detectedCategories.some(detected => 
-          opt.name.toLowerCase().includes(detected.toLowerCase())
-        )
+        !detectedCategories.some(detectedCat => {
+          const optName = opt.name.toLowerCase();
+          const detectedName = detectedCat.toLowerCase();
+          return optName.includes(detectedName) || detectedName.includes(optName);
+        })
       );
       return [...detected, ...others];
     }
@@ -212,10 +219,24 @@ export default function SearchableSelect({
                   <p className="mb-2">No match found for "{searchTerm}"</p>
                   <button
                     type="button"
-                    onClick={() => {
-                      // Allow custom category creation
-                      onChange(searchTerm);
-                      setIsOpen(false);
+                    onClick={async () => {
+                      // Create custom category via API
+                      try {
+                        const { categoriesAPI } = await import('@/services/api');
+                        const newCategory = await categoriesAPI.create(searchTerm);
+                        // Update the value with the new category's slug
+                        onChange(newCategory.slug);
+                        setIsOpen(false);
+                        // Notify parent to refresh categories list
+                        if (onCategoryCreated) {
+                          onCategoryCreated();
+                        }
+                      } catch (error: any) {
+                        console.error('Failed to create category:', error);
+                        // Fallback: just use the search term as value
+                        onChange(searchTerm);
+                        setIsOpen(false);
+                      }
                     }}
                     className="text-primary hover:underline font-medium"
                   >

@@ -460,6 +460,7 @@ export default function CreateListing() {
             placeholder={categories.length === 0 ? "Loading categories..." : "Search or select a category..."}
             detectedCategories={detectedCategories}
             allowCustom={true}
+            onCategoryCreated={() => loadCategories()} // Refresh categories after creation
           />
           {categories.length === 0 && (
             <p className="text-xs text-yellow-600 mt-1">
