@@ -78,7 +78,7 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={onClose}>
       <div
-        className="bg-white w-full max-w-md mx-auto rounded-t-3xl max-h-[85vh] overflow-auto"
+        className="bg-white w-full max-w-md mx-auto rounded-t-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4">
@@ -90,85 +90,88 @@ export default function EditProfileModal({ isOpen, onClose, onSuccess }: EditPro
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-6">
-          {/* Profile Photo */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-3">
-              Profile Photo
-            </label>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                {photoPreview ? (
-                  <img
-                    src={photoPreview}
-                    alt="Profile preview"
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold">
-                    {user?.profile?.name?.charAt(0) || 'U'}
-                  </div>
-                )}
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-dark">
-                  <Camera size={16} />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                </label>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Profile Photo */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
+                Profile Photo
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Profile preview"
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold">
+                      {user?.profile?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <label className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-dark">
+                    <Camera size={16} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <label className="block w-full cursor-pointer">
+                    <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                      <Upload size={16} />
+                      <span>Upload Photo</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, max 15MB</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <label className="block w-full cursor-pointer">
-                  <div className="flex items-center gap-2 text-primary text-sm font-medium">
-                    <Upload size={16} />
-                    <span>Upload Photo</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                </label>
-                <p className="text-xs text-gray-500 mt-1">JPG, PNG, max 15MB</p>
-              </div>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Name
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Your full name"
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Course */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Course
+              </label>
+              <input
+                type="text"
+                value={formData.course}
+                onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                placeholder="e.g. Computer Science"
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200"
+                maxLength={200}
+              />
             </div>
           </div>
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Name
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Your full name"
-              className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200"
-              maxLength={100}
-            />
-          </div>
-
-          {/* Course */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Course
-            </label>
-            <input
-              type="text"
-              value={formData.course}
-              onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-              placeholder="e.g. Computer Science"
-              className="w-full px-4 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border border-gray-200"
-              maxLength={200}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div className="sticky bottom-0 bg-white pt-4 flex gap-3">
+          {/* Fixed footer buttons */}
+          <div className="border-t border-gray-100 bg-white px-4 py-4 flex gap-3 safe-area-bottom">
             <button
               type="button"
               onClick={onClose}

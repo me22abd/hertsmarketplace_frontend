@@ -186,6 +186,11 @@ export const categoriesAPI = {
     const response = await api.get<Category>(`/categories/${slug}/`);
     return response.data;
   },
+
+  create: async (name: string): Promise<Category> => {
+    const response = await api.post<Category>('/categories/', { name });
+    return response.data;
+  },
 };
 
 // Listings API

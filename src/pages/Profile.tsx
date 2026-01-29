@@ -4,7 +4,6 @@ import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, Help
 import { useAuthStore } from '@/store/authStore';
 import { authAPI, listingsAPI, savedListingsAPI, messagesAPI, premiumAPI } from '@/services/api';
 import BottomNav from '@/components/BottomNav';
-import EditProfileModal from '@/components/EditProfileModal';
 import { getInitials } from '@/utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -12,7 +11,6 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, logout, loadUser } = useAuthStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [showVerificationInput, setShowVerificationInput] = useState(false);
@@ -247,7 +245,7 @@ export default function Profile() {
             </div>
           </div>
           <button
-            onClick={() => setShowEditProfile(true)}
+            onClick={() => navigate('/profile/edit')}
             className="w-full bg-gray-900 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <Edit2 size={18} />
@@ -341,7 +339,10 @@ export default function Profile() {
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Settings</h3>
           </div>
-          <button className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50">
+          <button
+            onClick={() => navigate('/notifications')}
+            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                 <Bell size={20} className="text-gray-700" />
@@ -409,13 +410,6 @@ export default function Profile() {
           </div>
         </div>
       )}
-
-      {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={showEditProfile}
-        onClose={() => setShowEditProfile(false)}
-        onSuccess={loadUser}
-      />
 
       <BottomNav />
     </div>

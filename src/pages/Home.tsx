@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, MapPin, SlidersHorizontal, Grid3x3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { categoriesAPI, listingsAPI } from '@/services/api';
+import { categoriesAPI, listingsAPI, premiumAPI } from '@/services/api';
 import type { Category, Listing } from '@/types';
 import ListingCard from '@/components/ListingCard';
 import Loading from '@/components/Loading';
@@ -37,12 +37,14 @@ export default function Home() {
   const { user } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     loadData();
+    loadRecentlyViewed();
   }, []);
 
   const loadData = async () => {
@@ -58,6 +60,45 @@ export default function Home() {
       toast.error('Failed to load data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadRecentlyViewed = async () => {
+    try {
+      // Try backend first (synced, up to last 20)
+      const data: any = await premiumAPI.getRecentlyViewed();
+      const rawItems = Array.isArray(data?.results) ? data.results : data;
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        const mapped = rawItems
+          .map((item: any) => item.listing)
+          .filter((l: any) => !!l);
+        const byId: Record<number, Listing> = {};
+        mapped.forEach((l: Listing) => {
+          byId[l.id] = l;
+        });
+        setRecentlyViewed(Object.values(byId).slice(0, 20));
+        return;
+      }
+    } catch (error) {
+      console.warn('Failed to load recently viewed from backend, falling back to local', error);
+    }
+
+    // Fallback: local storage (for safety / offline)
+    try {
+      const STORAGE_KEY = 'recently_viewed_listings';
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const items = JSON.parse(raw);
+      if (Array.isArray(items)) {
+        // items are already minimal listing-like objects
+        const byId: Record<number, Listing> = {};
+        items.forEach((l: Listing) => {
+          byId[l.id] = l;
+        });
+        setRecentlyViewed(Object.values(byId).slice(0, 20));
+      }
+    } catch (e) {
+      console.warn('Failed to parse local recently viewed items', e);
     }
   };
 
@@ -218,6 +259,37 @@ export default function Home() {
                     <NewListingImage listing={listing} />
                   </div>
                   <h3 className="text-xs font-medium text-gray-900 truncate">{listing.title}</h3>
+                  <p className="text-sm font-bold text-gray-900">£{listing.price}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Recently Viewed */}
+        {recentlyViewed.length > 0 && (
+          <section className="py-2">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Recently viewed</h2>
+                <p className="text-xs text-gray-500">
+                  Jump back to items you&apos;ve looked at.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4">
+              {recentlyViewed.slice(0, 10).map((listing) => (
+                <Link
+                  key={listing.id}
+                  to={`/listing/${listing.id}`}
+                  className="relative flex-shrink-0 w-32"
+                >
+                  <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-2">
+                    <NewListingImage listing={listing} />
+                  </div>
+                  <h3 className="text-xs font-medium text-gray-900 truncate">
+                    {listing.title}
+                  </h3>
                   <p className="text-sm font-bold text-gray-900">£{listing.price}</p>
                 </Link>
               ))}

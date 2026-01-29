@@ -18,6 +18,8 @@ import CreateListing from '@/pages/CreateListing';
 import Messages from '@/pages/Messages';
 import SavedListings from '@/pages/SavedListings';
 import Profile from '@/pages/Profile';
+import Notifications from '@/pages/Notifications';
+import EditProfile from '@/pages/EditProfile';
 import MyListings from '@/pages/MyListings';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
@@ -150,10 +152,27 @@ function App() {
           }
         />
         <Route
+          path="/profile/edit"
+          element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/my-listings"
           element={
             <ProtectedRoute>
               <MyListings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
             </ProtectedRoute>
           }
         />
