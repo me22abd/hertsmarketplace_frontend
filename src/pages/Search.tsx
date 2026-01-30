@@ -129,7 +129,7 @@ export default function Search() {
             >
               All
             </button>
-            {categories.slice(0, 8).map((category) => (
+            {(categories || []).slice(0, 8).map((category) => (
               <button
                 key={category.id}
                 onClick={() => setFilters(prev => ({ ...prev, category: category.slug }))}
@@ -263,7 +263,7 @@ export default function Search() {
               <div>
                 <h3 className="text-base font-semibold text-gray-900 mb-3">Category</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {categories.slice(0, 6).map((category) => (
+                  {(categories || []).slice(0, 6).map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setFilters(prev => ({ 

@@ -54,8 +54,9 @@ export default function Home() {
         categoriesAPI.list(),
         listingsAPI.list({ ordering: '-created_at' }),
       ]);
-      setCategories(categoriesData.results);
-      setListings(listingsData.results);
+      // Handle paginated or direct array response
+      setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData?.results || []));
+      setListings(Array.isArray(listingsData) ? listingsData : (listingsData?.results || []));
     } catch (error: any) {
       toast.error('Failed to load data');
     } finally {
@@ -192,7 +193,7 @@ export default function Home() {
             >
               All
             </button>
-            {categories.slice(0, 8).map((category) => (
+            {(categories || []).slice(0, 8).map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategorySelect(category.slug)}
@@ -245,7 +246,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4">
-              {listings.slice(0, 4).map((listing) => (
+              {(listings || []).slice(0, 4).map((listing) => (
                 <Link
                   key={listing.id}
                   to={`/listing/${listing.id}`}
@@ -278,7 +279,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4">
-              {recentlyViewed.slice(0, 10).map((listing) => (
+              {(recentlyViewed || []).slice(0, 10).map((listing) => (
                 <Link
                   key={listing.id}
                   to={`/listing/${listing.id}`}
