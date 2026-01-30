@@ -206,10 +206,8 @@ export default function Messages() {
                 const otherUser = selectedConversation.other_user;
                 const avatarUrl = otherUser?.profile?.avatar_url || 
                                  otherUser?.profile?.avatar || 
-                                 otherUser?.avatar_url || 
                                  null;
                 const displayName = otherUser?.profile?.name || 
-                                  otherUser?.name || 
                                   otherUser?.email || 
                                   'User';
                 const subtitle = selectedConversation.listing?.title || 
@@ -328,10 +326,8 @@ export default function Messages() {
               const otherUser = selectedConversation.other_user;
               const otherUserAvatar = otherUser?.profile?.avatar_url || 
                                      otherUser?.profile?.avatar || 
-                                     otherUser?.avatar_url || 
                                      null;
               const otherUserName = otherUser?.profile?.name || 
-                                   otherUser?.name || 
                                    otherUser?.email || 
                                    'User';
               
