@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState((location.state as any)?.email || '');
+  const [email] = useState((location.state as any)?.email || '');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
