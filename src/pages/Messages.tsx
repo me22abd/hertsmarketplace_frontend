@@ -202,37 +202,50 @@ export default function Messages() {
                 <ArrowLeft size={24} className="text-gray-900" />
               </button>
               {(() => {
-                // Get seller profile photo - try avatar, avatar_url, or profile_photo
-                const profile = selectedConversation.other_user.profile;
-                const profilePhoto = profile.avatar || profile.avatar_url || profile.profile_photo;
-                return profilePhoto ? (
-                  <img
-                    src={profilePhoto}
-                    alt={selectedConversation.other_user.profile.name}
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      // Fallback to initials if image fails to load
-                      const initials = getInitials(selectedConversation.other_user.profile.name);
-                      e.currentTarget.style.display = 'none';
-                      if (e.currentTarget.parentElement) {
-                        e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
-                      }
-                    }}
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    {getInitials(selectedConversation.other_user.profile.name)}
-                  </div>
+                // Always use other_user from conversation (the OTHER participant)
+                const otherUser = selectedConversation.other_user;
+                const avatarUrl = otherUser?.profile?.avatar_url || 
+                                 otherUser?.profile?.avatar || 
+                                 null;
+                const displayName = otherUser?.profile?.name || 
+                                  otherUser?.email || 
+                                  'User';
+                const subtitle = selectedConversation.listing?.title || 
+                                otherUser?.profile?.course || 
+                                'University of Hertfordshire';
+                
+                return (
+                  <>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          // Fallback to initials if image fails to load
+                          const initials = getInitials(displayName);
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                        {getInitials(displayName)}
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="font-semibold text-gray-900">
+                        {displayName}
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {subtitle}
+                      </p>
+                    </div>
+                  </>
                 );
               })()}
-              <div>
-                <h2 className="font-semibold text-gray-900">
-                  {selectedConversation.other_user.profile.name || selectedConversation.other_user.email}
-                </h2>
-                <p className="text-xs text-gray-500">
-                  {selectedConversation.other_user.profile.course || 'University of Hertfordshire'}
-                </p>
-              </div>
             </div>
             <button className="touch-target -mr-2">
               <MoreVertical size={20} className="text-gray-700" />
@@ -287,38 +300,82 @@ export default function Messages() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full max-w-md mx-auto px-4 py-4 space-y-2">
+        <div className="flex flex-col w-full px-4 py-4">
           {messages.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
             </div>
           ) : (
-            messages.map((message) => {
-              const isMine = message.sender?.id === user?.id;
+            messages.map((message, index) => {
+              // Use sender_id for alignment (backend returns this)
+              const myId = Number(user?.id);
+              const senderId = Number((message as any).sender_id || message.sender?.id);
+              const isMine = senderId === myId;
+              
+              // Debug log for first message only
+              if (index === 0) {
+                console.log({ myId, senderId, isMine, msg: message, otherUser: selectedConversation.other_user });
+              }
+              
+              // Check if previous message is from same sender (for grouping)
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const prevSenderId = prevMessage ? Number((prevMessage as any).sender_id || prevMessage.sender?.id) : null;
+              const isGrouped = prevSenderId === senderId;
+              
+              // Get avatar for "theirs" messages
+              const otherUser = selectedConversation.other_user;
+              const otherUserAvatar = otherUser?.profile?.avatar_url || 
+                                     otherUser?.profile?.avatar || 
+                                     null;
+              const otherUserName = otherUser?.profile?.name || 
+                                   otherUser?.email || 
+                                   'User';
+              
               return (
                 <div
                   key={message.id}
-                  className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} mb-1`}
+                  className={`w-full flex ${isMine ? 'justify-end' : 'justify-start'} mb-2`}
                 >
+                  {!isMine && (
+                    <div className="flex-shrink-0 mr-2 self-end">
+                      {otherUserAvatar ? (
+                        <img
+                          src={otherUserAvatar}
+                          alt={otherUserName}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              const initials = getInitials(otherUserName);
+                              e.currentTarget.parentElement.innerHTML = `<div class="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">${initials}</div>`;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">
+                          {getInitials(otherUserName)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
                     <div
                       className={`rounded-2xl px-4 py-2.5 ${
                         isMine
                           ? 'bg-primary text-white rounded-br-sm'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                          : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                         {message.content}
                       </p>
                     </div>
-                    <p
-                      className={`text-xs mt-1 px-2 ${
-                        isMine ? 'text-gray-400' : 'text-gray-400'
-                      }`}
-                    >
-                      {formatRelativeTime(message.created_at)}
-                    </p>
+                    {/* Show timestamp only if not grouped or is last message */}
+                    {(!isGrouped || index === messages.length - 1) && (
+                      <p className={`text-xs mt-1 px-2 ${isMine ? 'text-gray-400' : 'text-gray-400'}`}>
+                        {formatRelativeTime(message.created_at)}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
