@@ -225,7 +225,7 @@ export const premiumAPI = {
     const response = await api.post('/recently-viewed/mark_viewed/', { listing_id: listingId });
     return response.data;
   },
-  uploadAvatar: async (file: File) => {
+  uploadAvatar: async (userId: any, file: File) => {
     const formData = new FormData();
     formData.append('avatar', file);
     const response = await api.post('/profile/upload-avatar/', formData, {
