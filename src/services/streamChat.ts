@@ -1,7 +1,7 @@
 /**
  * Stream Chat service for initializing and managing Stream Chat client
  */
-import { StreamChat, Channel, User } from 'stream-chat';
+import { StreamChat, Channel } from 'stream-chat';
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 

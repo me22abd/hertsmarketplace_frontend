@@ -13,7 +13,6 @@ import {
   MessageInput,
   ChannelList,
   ChannelPreviewMessenger,
-  useChatContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
 import { streamAPI } from '@/services/api';
@@ -29,9 +28,8 @@ export default function Messages() {
   const location = useLocation();
   const { user } = useAuthStore();
   const [client, setClient] = useState<any>(null);
-  const [channel, setChannel] = useState<any>(null);
+  const [activeChannel, setActiveChannel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showChannelList, setShowChannelList] = useState(true);
 
   useEffect(() => {
     initializeStream();
@@ -65,8 +63,7 @@ export default function Messages() {
       setIsLoading(true);
       const response = await streamAPI.createChannel(listingId);
       const streamChannel = await getStreamChannel(response.channel_id);
-      setChannel(streamChannel);
-      setShowChannelList(false);
+      setActiveChannel(streamChannel);
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to create channel');
     } finally {
@@ -94,65 +91,48 @@ export default function Messages() {
     );
   }
 
-  // Show channel list if no channel selected
-  if (showChannelList && !channel) {
-    return (
-      <div className="min-h-screen bg-white pb-20">
-        <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-          <div className="w-full max-w-md mx-auto px-4 py-3">
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          </div>
-        </div>
-
-        <Chat client={client}>
-          <ChannelList
-            filters={{ members: { $in: [String(user?.id)] } }}
-            sort={{ last_message_at: -1 }}
-            Preview={ChannelPreviewMessenger}
-            onSelect={(selectedChannel) => {
-              setChannel(selectedChannel);
-              setShowChannelList(false);
-            }}
-          />
-        </Chat>
-
-        <BottomNav />
-      </div>
-    );
-  }
-
-  // Show selected channel
+  // Show channel list and active channel
   return (
-    <div className="min-h-screen bg-white flex flex-col pb-20">
+    <div className="min-h-screen bg-white pb-20">
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
+        <div className="w-full max-w-md mx-auto px-4 py-3">
+          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+        </div>
+      </div>
+
       <Chat client={client}>
-        <Channel channel={channel}>
+        <ChannelList
+          filters={{ members: { $in: [String(user?.id)] } }}
+          sort={{ last_message_at: -1 }}
+          Preview={ChannelPreviewMessenger}
+        />
+        <Channel channel={activeChannel}>
           <Window>
             {/* Custom Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-              <div className="w-full max-w-md mx-auto px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setChannel(null);
-                      setShowChannelList(true);
-                    }}
-                    className="touch-target -ml-2"
-                  >
-                    <ArrowLeft size={24} className="text-gray-900" />
-                  </button>
-                  <div className="flex-1">
-                    <h2 className="font-semibold text-gray-900">
-                      {channel?.data?.name || 'Chat'}
-                    </h2>
-                    {channel?.data?.listing?.title && (
-                      <p className="text-xs text-gray-500">
-                        {channel.data.listing.title}
-                      </p>
-                    )}
+            {activeChannel && (
+              <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
+                <div className="w-full max-w-md mx-auto px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveChannel(null)}
+                      className="touch-target -ml-2"
+                    >
+                      <ArrowLeft size={24} className="text-gray-900" />
+                    </button>
+                    <div className="flex-1">
+                      <h2 className="font-semibold text-gray-900">
+                        {activeChannel?.data?.name || 'Chat'}
+                      </h2>
+                      {activeChannel?.data?.listing?.title && (
+                        <p className="text-xs text-gray-500">
+                          {activeChannel.data.listing.title}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Stream Message List */}
             <MessageList />
