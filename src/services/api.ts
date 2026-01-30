@@ -61,8 +61,18 @@ export const authAPI = {
     const response = await api.post('/auth/send-verification/', { email });
     return response.data;
   },
-  sendVerificationEmail: async (email: string) => {
-    const response = await api.post('/auth/send-verification/', { email });
+  sendVerificationEmail: async (email?: string) => {
+    // If email not provided, get from current user
+    let emailToUse = email;
+    if (!emailToUse) {
+      try {
+        const user = await authAPI.getCurrentUser();
+        emailToUse = user.email;
+      } catch {
+        throw new Error('Email is required for verification');
+      }
+    }
+    const response = await api.post('/auth/send-verification/', { email: emailToUse });
     return response.data;
   },
   verifyEmail: async (email: string, code: string) => {
