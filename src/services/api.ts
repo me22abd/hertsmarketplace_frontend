@@ -300,6 +300,18 @@ export const reviewsAPI = {
   },
 };
 
+// Stream Chat API
+export const streamAPI = {
+  getToken: async () => {
+    const response = await api.post('/chat/token/');
+    return response.data;
+  },
+  createChannel: async (listingId: number) => {
+    const response = await api.post('/chat/channel/', { listing_id: listingId });
+    return response.data;
+  },
+};
+
 // AI API
 export const aiAPI = {
   analyzeImage: async (imageFile?: File) => {

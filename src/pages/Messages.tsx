@@ -1,417 +1,169 @@
+/**
+ * Messages page using Stream Chat
+ * Replaces in-house messaging with Stream Chat UI components
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Send, MoreVertical, Search } from 'lucide-react';
-import { messagesAPI, conversationsAPI } from '@/services/api';
-import type { Conversation, Message, Listing } from '@/types';
+import { ArrowLeft } from 'lucide-react';
+import {
+  Chat,
+  Channel,
+  Window,
+  MessageList,
+  MessageInput,
+  ChannelList,
+  ChannelPreviewMessenger,
+  useChatContext,
+} from 'stream-chat-react';
+import { getStreamClient, getStreamChannel } from '@/services/streamChat';
+import { streamAPI } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
-import { formatRelativeTime, getInitials, formatPrice } from '@/utils/helpers';
-import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import type { Listing } from '@/types';
+import 'stream-chat-react/dist/css/v2/index.css';
 
 export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageContent, setMessageContent] = useState('');
+  const [client, setClient] = useState<any>(null);
+  const [channel, setChannel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
+  const [showChannelList, setShowChannelList] = useState(true);
 
   useEffect(() => {
-    loadConversations();
+    initializeStream();
     
-    // If navigated from listing detail, start a new conversation
+    // If navigated from listing detail, create channel
     if (location.state?.listing) {
       const listing = location.state.listing as Listing;
-      handleStartConversation(listing.id);
+      handleCreateChannel(listing.id);
     }
   }, []);
 
-  useEffect(() => {
-    if (selectedConversation?.id) {
-      loadMessages(selectedConversation.id);
-    }
-  }, [selectedConversation]);
-
-  const loadConversations = async () => {
+  const initializeStream = async () => {
     try {
-      setIsLoading(true);
-      // Use new conversations API
-      const data = await conversationsAPI.list();
-      setConversations(data);
+      const streamClient = getStreamClient();
+      if (!streamClient) {
+        toast.error('Stream Chat not initialized. Please log in again.');
+        navigate('/login');
+        return;
+      }
+      setClient(streamClient);
     } catch (error) {
-      toast.error('Failed to load conversations');
+      console.error('Failed to initialize Stream:', error);
+      toast.error('Failed to load chat');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStartConversation = async (listingId: number) => {
+  const handleCreateChannel = async (listingId: number) => {
     try {
       setIsLoading(true);
-      // Start or get conversation
-      const conversation = await conversationsAPI.start(listingId);
-      setSelectedConversation(conversation);
+      const response = await streamAPI.createChannel(listingId);
+      const streamChannel = await getStreamChannel(response.channel_id);
+      setChannel(streamChannel);
+      setShowChannelList(false);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to start conversation');
+      toast.error(error.response?.data?.error || 'Failed to create channel');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadMessages = async (conversationId: number) => {
-    try {
-      // Use conversation_id instead of listing_id
-      const data = await messagesAPI.list(conversationId);
-      setMessages(data.results || []);
-    } catch (error) {
-      // If no messages exist yet, that's okay
-      setMessages([]);
-    }
-  };
+  if (isLoading && !client) {
+    return <Loading fullScreen />;
+  }
 
-  const handleSendMessage = async () => {
-    if (!messageContent.trim() || !selectedConversation?.id) return;
+  if (!client) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Chat not available. Please log in again.</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-    try {
-      setIsSending(true);
-      // Send message with conversation_id
-      await messagesAPI.send(selectedConversation.id, messageContent);
-      setMessageContent('');
-      await loadMessages(selectedConversation.id);
-      await loadConversations();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || error.response?.data?.error || 'Failed to send message');
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // Conversation List View
-  if (!selectedConversation) {
+  // Show channel list if no channel selected
+  if (showChannelList && !channel) {
     return (
       <div className="min-h-screen bg-white pb-20">
-        {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
           <div className="w-full max-w-md mx-auto px-4 py-3">
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Messages</h1>
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search messages..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
           </div>
         </div>
 
-        <div className="w-full max-w-md mx-auto">
-          {isLoading ? (
-            <Loading />
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                <Send size={32} className="text-gray-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">No Messages Yet</h2>
-              <p className="text-gray-500">
-                Start a conversation with a seller
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {conversations.map((conversation) => (
-                <button
-                  key={conversation.id || `${conversation.listing.id}-${conversation.other_user.id}`}
-                  onClick={() => setSelectedConversation(conversation)}
-                  className="w-full px-4 py-4 flex items-start gap-3 active:bg-gray-50 transition-colors"
-                >
-                  {(() => {
-                    // Get seller profile photo - try avatar, avatar_url, or profile_photo
-                    const profile = conversation.other_user.profile;
-                    const profilePhoto = profile.avatar || profile.avatar_url || profile.profile_photo;
-                    return profilePhoto ? (
-                      <img
-                        src={profilePhoto}
-                        alt={conversation.other_user.profile.name}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                        onError={(e) => {
-                          // Fallback to initials if image fails to load
-                          const initials = getInitials(conversation.other_user.profile.name);
-                          e.currentTarget.style.display = 'none';
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.parentElement.innerHTML = `<div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">${initials}</div>`;
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold flex-shrink-0">
-                        {getInitials(conversation.other_user.profile.name)}
-                      </div>
-                    );
-                  })()}
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {conversation.other_user.profile.name}
-                      </h3>
-                      {conversation.last_message && (
-                        <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                          {formatRelativeTime(conversation.last_message.created_at)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 truncate mb-1">
-                      {conversation.listing.title}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message?.content || 'Start a conversation'}
-                      </p>
-                      {conversation.unread_count > 0 && (
-                        <span className="ml-2 flex-shrink-0 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-semibold">
-                          {conversation.unread_count}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <Chat client={client}>
+          <ChannelList
+            filters={{ members: { $in: [String(user?.id)] } }}
+            sort={{ last_message_at: -1 }}
+            Preview={ChannelPreviewMessenger}
+            onSelect={(selectedChannel) => {
+              setChannel(selectedChannel);
+              setShowChannelList(false);
+            }}
+          />
+        </Chat>
 
         <BottomNav />
       </div>
     );
   }
 
-  // Chat View
+  // Show selected channel
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Chat Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-        <div className="w-full max-w-md mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSelectedConversation(null)} className="touch-target -ml-2">
-                <ArrowLeft size={24} className="text-gray-900" />
-              </button>
-              {(() => {
-                // Always use other_user from conversation (the OTHER participant)
-                const otherUser = selectedConversation.other_user;
-                const avatarUrl = otherUser?.profile?.avatar_url || 
-                                 otherUser?.profile?.avatar || 
-                                 null;
-                const displayName = otherUser?.profile?.name || 
-                                  otherUser?.email || 
-                                  'User';
-                const subtitle = selectedConversation.listing?.title || 
-                                otherUser?.profile?.course || 
-                                'University of Hertfordshire';
-                
-                return (
-                  <>
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={displayName}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                        onError={(e) => {
-                          // Fallback to initials if image fails to load
-                          const initials = getInitials(displayName);
-                          e.currentTarget.style.display = 'none';
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                        {getInitials(displayName)}
-                      </div>
-                    )}
-                    <div>
-                      <h2 className="font-semibold text-gray-900">
-                        {displayName}
-                      </h2>
+    <div className="min-h-screen bg-white flex flex-col pb-20">
+      <Chat client={client}>
+        <Channel channel={channel}>
+          <Window>
+            {/* Custom Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
+              <div className="w-full max-w-md mx-auto px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setChannel(null);
+                      setShowChannelList(true);
+                    }}
+                    className="touch-target -ml-2"
+                  >
+                    <ArrowLeft size={24} className="text-gray-900" />
+                  </button>
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-gray-900">
+                      {channel?.data?.name || 'Chat'}
+                    </h2>
+                    {channel?.data?.listing?.title && (
                       <p className="text-xs text-gray-500">
-                        {subtitle}
-                      </p>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <button className="touch-target -mr-2">
-              <MoreVertical size={20} className="text-gray-700" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Listing Info Banner */}
-      <div className="w-full max-w-md mx-auto px-4 py-3 bg-gray-50 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
-            {(() => {
-              // Try image_url first (cloud storage), then primary_image, then image
-              const imageUrl = selectedConversation.listing.image_url || 
-                              (selectedConversation.listing as any).primary_image || 
-                              selectedConversation.listing.image;
-              return imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={selectedConversation.listing.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback to emoji if image fails to load
-                    e.currentTarget.style.display = 'none';
-                    if (e.currentTarget.parentElement) {
-                      e.currentTarget.parentElement.innerHTML = '<span class="text-2xl">📦</span>';
-                    }
-                  }}
-                />
-              ) : (
-                <span className="text-2xl">📦</span>
-              );
-            })()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm truncate">
-              {selectedConversation.listing.title}
-            </h3>
-            <p className="text-primary font-bold text-sm">
-              {formatPrice(selectedConversation.listing.price)}
-            </p>
-          </div>
-          <button
-            onClick={() => navigate(`/listings/${selectedConversation.listing.id}`)}
-            className="text-xs text-primary font-medium flex-shrink-0"
-          >
-            View
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col w-full px-4 py-4">
-          {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
-            </div>
-          ) : (
-            messages.map((message, index) => {
-              // Use sender_id for alignment (backend returns this)
-              const myId = Number(user?.id);
-              const senderId = Number((message as any).sender_id || message.sender?.id);
-              const isMine = senderId === myId;
-              
-              // Debug log for first message only
-              if (index === 0) {
-                console.log({ myId, senderId, isMine, msg: message, otherUser: selectedConversation.other_user });
-              }
-              
-              // Check if previous message is from same sender (for grouping)
-              const prevMessage = index > 0 ? messages[index - 1] : null;
-              const prevSenderId = prevMessage ? Number((prevMessage as any).sender_id || prevMessage.sender?.id) : null;
-              const isGrouped = prevSenderId === senderId;
-              
-              // Get avatar for "theirs" messages
-              const otherUser = selectedConversation.other_user;
-              const otherUserAvatar = otherUser?.profile?.avatar_url || 
-                                     otherUser?.profile?.avatar || 
-                                     null;
-              const otherUserName = otherUser?.profile?.name || 
-                                   otherUser?.email || 
-                                   'User';
-              
-              return (
-                <div
-                  key={message.id}
-                  className={`w-full flex ${isMine ? 'justify-end' : 'justify-start'} mb-2`}
-                >
-                  {!isMine && (
-                    <div className="flex-shrink-0 mr-2 self-end">
-                      {otherUserAvatar ? (
-                        <img
-                          src={otherUserAvatar}
-                          alt={otherUserName}
-                          className="w-6 h-6 rounded-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            if (e.currentTarget.parentElement) {
-                              const initials = getInitials(otherUserName);
-                              e.currentTarget.parentElement.innerHTML = `<div class="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">${initials}</div>`;
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">
-                          {getInitials(otherUserName)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
-                    <div
-                      className={`rounded-2xl px-4 py-2.5 ${
-                        isMine
-                          ? 'bg-primary text-white rounded-br-sm'
-                          : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                        {message.content}
-                      </p>
-                    </div>
-                    {/* Show timestamp only if not grouped or is last message */}
-                    {(!isGrouped || index === messages.length - 1) && (
-                      <p className={`text-xs mt-1 px-2 ${isMine ? 'text-gray-400' : 'text-gray-400'}`}>
-                        {formatRelativeTime(message.created_at)}
+                        {channel.data.listing.title}
                       </p>
                     )}
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+              </div>
+            </div>
 
-      {/* Message Input */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-100">
-        <div className="w-full max-w-md mx-auto px-4 py-3">
-          <div className="flex items-end gap-2">
-            <textarea
-              value={messageContent}
-              onChange={(e) => setMessageContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Type a message..."
-              rows={1}
-              className="flex-1 resize-none px-4 py-3 bg-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 max-h-32"
-              style={{ minHeight: '44px' }}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!messageContent.trim() || isSending}
-              className="w-11 h-11 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-50 flex-shrink-0"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-        </div>
-      </div>
+            {/* Stream Message List */}
+            <MessageList />
+
+            {/* Stream Message Input */}
+            <MessageInput />
+          </Window>
+        </Channel>
+      </Chat>
+
+      <BottomNav />
     </div>
   );
 }
