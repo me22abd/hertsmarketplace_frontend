@@ -287,7 +287,7 @@ export default function Messages() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full max-w-md mx-auto px-4 py-4 space-y-4">
+        <div className="flex flex-col w-full px-4 py-4">
           {messages.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
@@ -301,7 +301,7 @@ export default function Messages() {
               
               // Debug log for first message only
               if (index === 0) {
-                console.log({ myId, senderId, isMine, msg: message });
+                console.log({ myId, senderId, isMine, msg: message, otherUser: selectedConversation.other_user });
               }
               
               // Check if previous message is from same sender (for grouping)
@@ -309,17 +309,50 @@ export default function Messages() {
               const prevSenderId = prevMessage ? Number((prevMessage as any).sender_id || prevMessage.sender?.id) : null;
               const isGrouped = prevSenderId === senderId;
               
+              // Get avatar for "theirs" messages
+              const otherUser = selectedConversation.other_user;
+              const otherUserAvatar = otherUser?.profile?.avatar_url || 
+                                     otherUser?.profile?.avatar || 
+                                     otherUser?.avatar_url || 
+                                     null;
+              const otherUserName = otherUser?.profile?.name || 
+                                   otherUser?.name || 
+                                   otherUser?.email || 
+                                   'User';
+              
               return (
                 <div
                   key={message.id}
-                  className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-1' : 'mt-2'}`}
+                  className={`w-full flex ${isMine ? 'justify-end' : 'justify-start'} mb-2`}
                 >
+                  {!isMine && (
+                    <div className="flex-shrink-0 mr-2 self-end">
+                      {otherUserAvatar ? (
+                        <img
+                          src={otherUserAvatar}
+                          alt={otherUserName}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              const initials = getInitials(otherUserName);
+                              e.currentTarget.parentElement.innerHTML = `<div class="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">${initials}</div>`;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">
+                          {getInitials(otherUserName)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
                     <div
                       className={`rounded-2xl px-4 py-2.5 ${
                         isMine
                           ? 'bg-primary text-white rounded-br-sm'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                          : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
