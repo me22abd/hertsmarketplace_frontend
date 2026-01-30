@@ -1,9 +1,13 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-c65470.up.railway.app';
+// Get API URL from environment or use default
+let API_URL = import.meta.env.VITE_API_URL || 'https://web-production-c65470.up.railway.app';
+
+// Normalize: remove trailing slash and /api if present to avoid double /api/
+API_URL = API_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
 const api = axios.create({
-  baseURL: API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`,
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
