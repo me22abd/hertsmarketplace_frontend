@@ -126,7 +126,7 @@ export default function Messages() {
             <div className="divide-y divide-gray-50">
               {conversations.map((conversation) => (
                 <button
-                  key={`${conversation.listing.id}-${conversation.other_user.id}`}
+                  key={conversation.id || `${conversation.listing.id}-${conversation.other_user.id}`}
                   onClick={() => setSelectedConversation(conversation)}
                   className="w-full px-4 py-4 flex items-start gap-3 active:bg-gray-50 transition-colors"
                 >
