@@ -61,6 +61,10 @@ export const authAPI = {
     const response = await api.post('/auth/send-verification/', { email });
     return response.data;
   },
+  sendVerificationEmail: async (email: string) => {
+    const response = await api.post('/auth/send-verification/', { email });
+    return response.data;
+  },
   verifyEmail: async (email: string, code: string) => {
     const response = await api.post('/auth/verify-email/', { email, code });
     return response.data;
@@ -140,6 +144,26 @@ export const listingsAPI = {
     const response = await api.post(`/listings/${id}/mark_sold/`);
     return response.data;
   },
+  markAvailable: async (id: number) => {
+    const response = await api.post(`/listings/${id}/mark_available/`);
+    return response.data;
+  },
+  markReserved: async (id: number) => {
+    const response = await api.post(`/listings/${id}/mark_reserved/`);
+    return response.data;
+  },
+  myListings: async () => {
+    const response = await api.get('/listings/', { params: { seller: 'me' } });
+    return response.data;
+  },
+  save: async (id: number) => {
+    const response = await api.post(`/listings/${id}/save_listing/`);
+    return response.data;
+  },
+  unsave: async (id: number) => {
+    const response = await api.post(`/listings/${id}/unsave_listing/`);
+    return response.data;
+  },
 };
 
 // Saved Listings API
@@ -185,16 +209,40 @@ export const premiumAPI = {
     const response = await api.get('/seller/dashboard/');
     return response.data;
   },
+  getSellerDashboard: async () => {
+    const response = await api.get('/seller/dashboard/');
+    return response.data;
+  },
   getNotifications: async () => {
     const response = await api.get('/notifications/');
+    return response.data;
+  },
+  getRecentlyViewed: async () => {
+    const response = await api.get('/recently-viewed/');
+    return response.data;
+  },
+  markAsViewed: async (listingId: number) => {
+    const response = await api.post('/recently-viewed/mark_viewed/', { listing_id: listingId });
+    return response.data;
+  },
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await api.post('/profile/upload-avatar/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  checkAlerts: async () => {
+    const response = await api.get('/saved-searches/check_alerts/');
     return response.data;
   },
 };
 
 // Search API
 export const searchAPI = {
-  search: async (query: string, params?: any) => {
-    const response = await api.get('/listings/', { params: { search: query, ...params } });
+  search: async (query: string) => {
+    const response = await api.get('/listings/', { params: { search: query } });
     return response.data;
   },
   save: async (data: any) => {
@@ -203,6 +251,22 @@ export const searchAPI = {
   },
   suggestions: async (query: string) => {
     const response = await api.get('/search/suggestions/', { params: { q: query } });
+    return response.data;
+  },
+};
+
+// Reviews API
+export const reviewsAPI = {
+  list: async (params?: any) => {
+    const response = await api.get('/reviews/', { params });
+    return response.data;
+  },
+  create: async (data: any) => {
+    const response = await api.post('/reviews/', data);
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/reviews/${id}/`);
     return response.data;
   },
 };
