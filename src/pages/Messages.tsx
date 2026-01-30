@@ -3,8 +3,8 @@
  * Replaces in-house messaging with Stream Chat UI components
  */
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
 import {
   Chat,
   Channel,
@@ -26,6 +26,7 @@ import 'stream-chat-react/dist/css/v2/index.css';
 export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [client, setClient] = useState<any>(null);
   const [activeChannel, setActiveChannel] = useState<any>(null);
@@ -34,12 +35,16 @@ export default function Messages() {
   useEffect(() => {
     initializeStream();
     
-    // If navigated from listing detail, create channel
-    if (location.state?.listing) {
+    // Check for channel_id in URL params
+    const channelId = searchParams.get('channel');
+    if (channelId) {
+      loadChannelFromId(channelId);
+    } else if (location.state?.listing) {
+      // Legacy: If navigated from listing detail, create channel
       const listing = location.state.listing as Listing;
       handleCreateChannel(listing.id);
     }
-  }, []);
+  }, [searchParams]);
 
   const initializeStream = async () => {
     try {
@@ -58,12 +63,28 @@ export default function Messages() {
     }
   };
 
+  const loadChannelFromId = async (channelId: string) => {
+    try {
+      setIsLoading(true);
+      const streamChannel = await getStreamChannel(channelId);
+      setActiveChannel(streamChannel);
+    } catch (error: any) {
+      toast.error('Failed to load channel');
+      // Remove invalid channel_id from URL
+      navigate('/messages', { replace: true });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCreateChannel = async (listingId: number) => {
     try {
       setIsLoading(true);
       const response = await streamAPI.createChannel(listingId);
       const streamChannel = await getStreamChannel(response.channel_id);
       setActiveChannel(streamChannel);
+      // Update URL with channel_id
+      navigate(`/messages?channel=${response.channel_id}`, { replace: true });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to create channel');
     } finally {
@@ -105,6 +126,23 @@ export default function Messages() {
           filters={{ members: { $in: [String(user?.id)] } }}
           sort={{ last_message_at: -1 }}
           Preview={ChannelPreviewMessenger}
+          EmptyStateIndicator={() => (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <MessageCircle size={32} className="text-gray-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">No Messages Yet</h2>
+              <p className="text-gray-500 text-center mb-6">
+                Start a conversation with a seller
+              </p>
+              <button
+                onClick={() => navigate('/home')}
+                className="px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Start Chatting
+              </button>
+            </div>
+          )}
         />
         <Channel channel={activeChannel}>
           <Window>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Star, ChevronRight, X, Check } from 'lucide-react';
 import { listingsAPI, reviewsAPI, premiumAPI } from '@/services/api';
+import { streamAPI } from '@/services/api';
 import type { Listing } from '@/types';
 import Loading from '@/components/Loading';
 import { useAuthStore } from '@/store/authStore';
@@ -143,9 +144,17 @@ export default function ListingDetail() {
     }
   };
 
-  const handleContactSeller = () => {
+  const handleContactSeller = async () => {
     if (!listing) return;
-    navigate('/messages', { state: { listing } });
+    
+    try {
+      // Create or get Stream channel
+      const response = await streamAPI.createChannel(listing.id);
+      // Navigate to messages with channel_id
+      navigate(`/messages?channel=${response.channel_id}`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to start conversation');
+    }
   };
 
   if (isLoading) {

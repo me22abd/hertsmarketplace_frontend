@@ -1,8 +1,9 @@
-import { Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Heart, MessageCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Listing } from '@/types';
 import { useState } from 'react';
-import { listingsAPI } from '@/services/api';
+import { listingsAPI, streamAPI } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -11,9 +12,12 @@ interface Props {
 }
 
 export default function ListingCard({ listing, onSaveToggle }: Props) {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [isSaved, setIsSaved] = useState(listing.is_saved || false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
 
   const handleSaveToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,6 +41,28 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
       toast.error(error.response?.data?.error || 'Failed to update');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleMessageSeller = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (isCreatingChannel) return;
+
+    try {
+      setIsCreatingChannel(true);
+      const response = await streamAPI.createChannel(listing.id);
+      navigate(`/messages?channel=${response.channel_id}`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to start conversation');
+    } finally {
+      setIsCreatingChannel(false);
     }
   };
 
@@ -71,16 +97,30 @@ export default function ListingCard({ listing, onSaveToggle }: Props) {
             </div>
           )}
           
-          {/* Save button */}
-          <button
-            onClick={handleSaveToggle}
-            disabled={isLoading}
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
-              isSaved ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <Heart size={16} className={isSaved ? 'fill-current' : ''} />
-          </button>
+          {/* Action buttons */}
+          <div className="absolute top-2 right-2 flex gap-2">
+            {/* Message Seller button */}
+            {user && listing.seller?.id !== user.id && (
+              <button
+                onClick={handleMessageSeller}
+                disabled={isCreatingChannel}
+                className="w-8 h-8 rounded-full bg-white text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-all shadow-sm"
+                title="Message seller"
+              >
+                <MessageCircle size={16} />
+              </button>
+            )}
+            {/* Save button */}
+            <button
+              onClick={handleSaveToggle}
+              disabled={isLoading}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                isSaved ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Heart size={16} className={isSaved ? 'fill-current' : ''} />
+            </button>
+          </div>
 
           {/* Status/Discount badge */}
           {listing.status === 'reserved' && (
