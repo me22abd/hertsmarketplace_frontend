@@ -275,7 +275,10 @@ export const searchAPI = {
 
 // Reviews API
 export const reviewsAPI = {
-  list: async (params?: any) => {
+  list: async (sellerId?: number, listingId?: number) => {
+    const params: any = {};
+    if (sellerId) params.seller_id = sellerId;
+    if (listingId) params.listing_id = listingId;
     const response = await api.get('/reviews/', { params });
     return response.data;
   },
@@ -287,17 +290,27 @@ export const reviewsAPI = {
     const response = await api.get(`/reviews/${id}/`);
     return response.data;
   },
+  sellerStats: async (sellerId: number) => {
+    const response = await api.get('/reviews/', { params: { seller_id: sellerId } });
+    return response.data;
+  },
 };
 
 // AI API
 export const aiAPI = {
-  analyzeImage: async (imageFile: File) => {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    const response = await api.post('/ai/analyze-image/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+  analyzeImage: async (imageFile?: File) => {
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      const response = await api.post('/ai/analyze-image/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } else {
+      // Call without image to get default suggestions
+      const response = await api.post('/ai/analyze-image/');
+      return response.data;
+    }
   },
   suggestPrice: async (data: any) => {
     const response = await api.post('/ai/suggest-price/', data);
