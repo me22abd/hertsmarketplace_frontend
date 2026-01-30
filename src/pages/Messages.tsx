@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, MoreVertical, Search } from 'lucide-react';
-import { messagesAPI } from '@/services/api';
+import { messagesAPI, conversationsAPI } from '@/services/api';
 import type { Conversation, Message, Listing } from '@/types';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
@@ -23,39 +23,24 @@ export default function Messages() {
   useEffect(() => {
     loadConversations();
     
-    // If navigated from listing detail, show new message interface
+    // If navigated from listing detail, start a new conversation
     if (location.state?.listing) {
       const listing = location.state.listing as Listing;
-      // Create a pseudo-conversation for the new chat
-      const newConversation: Conversation = {
-        listing,
-        other_user: listing.seller,
-        last_message: {
-          id: 0,
-          listing: listing.id,
-          listing_title: listing.title,
-          sender: listing.seller,
-          recipient: user!,
-          content: '',
-          is_read: true,
-          created_at: new Date().toISOString(),
-        },
-        unread_count: 0,
-      };
-      setSelectedConversation(newConversation);
+      handleStartConversation(listing.id);
     }
   }, []);
 
   useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.listing.id);
+    if (selectedConversation?.id) {
+      loadMessages(selectedConversation.id);
     }
   }, [selectedConversation]);
 
   const loadConversations = async () => {
     try {
       setIsLoading(true);
-      const data = await messagesAPI.conversations();
+      // Use new conversations API
+      const data = await conversationsAPI.list();
       setConversations(data);
     } catch (error) {
       toast.error('Failed to load conversations');
@@ -64,9 +49,23 @@ export default function Messages() {
     }
   };
 
-  const loadMessages = async (listingId: number) => {
+  const handleStartConversation = async (listingId: number) => {
     try {
-      const data = await messagesAPI.list(listingId);
+      setIsLoading(true);
+      // Start or get conversation
+      const conversation = await conversationsAPI.start(listingId);
+      setSelectedConversation(conversation);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to start conversation');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMessages = async (conversationId: number) => {
+    try {
+      // Use conversation_id instead of listing_id
+      const data = await messagesAPI.list(conversationId);
       setMessages(data.results || []);
     } catch (error) {
       // If no messages exist yet, that's okay
@@ -75,16 +74,17 @@ export default function Messages() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageContent.trim() || !selectedConversation) return;
+    if (!messageContent.trim() || !selectedConversation?.id) return;
 
     try {
       setIsSending(true);
-      await messagesAPI.send(selectedConversation.listing.id, messageContent);
+      // Send message with conversation_id
+      await messagesAPI.send(selectedConversation.id, messageContent);
       setMessageContent('');
-      await loadMessages(selectedConversation.listing.id);
+      await loadMessages(selectedConversation.id);
       await loadConversations();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Failed to send message');
+      toast.error(error.response?.data?.detail || error.response?.data?.error || 'Failed to send message');
     } finally {
       setIsSending(false);
     }

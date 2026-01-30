@@ -1,639 +1,208 @@
-import axios, { AxiosError } from 'axios';
-import type {
-  AuthResponse,
-  Category,
-  Conversation,
-  CreateListingData,
-  Listing,
-  LoginRequest,
-  Message,
-  PaginatedResponse,
-  RegisterRequest,
-  TokenResponse,
-  UpdateProfileData,
-  User,
-  UserProfile,
-} from '@/types';
+import axios from 'axios';
 
-// Ensure API URL uses HTTPS and has no trailing slash
-const getApiBaseUrl = () => {
-  const url = import.meta.env.VITE_API_URL || '/api';
-  // Remove trailing slash if present
-  return url.replace(/\/$/, '');
-};
+const API_URL = import.meta.env.VITE_API_URL || 'https://hertsmarketplace-production.up.railway.app';
 
-const API_BASE_URL = getApiBaseUrl();
-
-// Create axios instance with timeout
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000, // 30 seconds timeout
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Response interceptor for token refresh and error handling
+// Handle token refresh on 401
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as any;
-
-    // Handle timeout errors
-    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      const timeoutError = new Error('Request timeout: The server is taking too long to respond. Please check if the backend is running.');
-      (timeoutError as any).isTimeout = true;
-      return Promise.reject(timeoutError);
-    }
-
-    // Handle network errors (backend down, CORS issues, etc.)
-    if (!error.response && error.request) {
-      // Check if it's a CORS error or connection issue
-      const isCorsError = error.message?.includes('CORS') || error.message?.includes('Network Error');
-      const errorMessage = isCorsError 
-        ? 'Connection error: Please check your internet connection and try again.'
-        : `Cannot connect to server. Please check:\n1. Your internet connection\n2. The backend server is running\n3. API URL: ${API_BASE_URL}`;
-      
-      const networkError = new Error(errorMessage);
-      (networkError as any).isNetworkError = true;
-      return Promise.reject(networkError);
-    }
-
-    // Handle 401 errors for token refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          const { data } = await axios.post<{ access: string }>(
-            `${API_BASE_URL}/auth/token/refresh/`,
-            { refresh: refreshToken },
-            { timeout: 30000 }
-          );
-          localStorage.setItem('access_token', data.access);
-          originalRequest.headers.Authorization = `Bearer ${data.access}`;
-          return api(originalRequest);
+  async (error) => {
+    if (error.response?.status === 401) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        try {
+          const response = await axios.post(`${API_URL}/api/auth/token/refresh/`, {
+            refresh: refreshToken,
+          });
+          localStorage.setItem('access_token', response.data.access);
+          error.config.headers.Authorization = `Bearer ${response.data.access}`;
+          return api.request(error.config);
+        } catch (refreshError) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          window.location.href = '/login';
         }
-      } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   }
 );
 
 // Auth API
 export const authAPI = {
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/register/', data);
+  login: async (credentials: { email: string; password: string }) => {
+    const response = await api.post('/auth/login/', credentials);
     return response.data;
   },
-
-  login: async (data: LoginRequest): Promise<TokenResponse> => {
-    const response = await api.post<TokenResponse>('/auth/login/', data);
+  register: async (data: any) => {
+    const response = await api.post('/auth/register/', data);
     return response.data;
   },
-
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/auth/user/');
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/user/');
     return response.data;
   },
-
-  sendVerificationEmail: async (): Promise<{ message: string; email_sent: boolean; expires_in_minutes?: number }> => {
-    const response = await api.post('/auth/send-verification/');
+  sendVerification: async (email: string) => {
+    const response = await api.post('/auth/send-verification/', { email });
     return response.data;
   },
-
-  verifyEmail: async (email: string, code: string): Promise<{ message: string; user: User; email_verified: boolean }> => {
+  verifyEmail: async (email: string, code: string) => {
     const response = await api.post('/auth/verify-email/', { email, code });
     return response.data;
   },
-
-  requestPasswordReset: async (email: string): Promise<{ message: string; email_sent: boolean; expires_in_minutes?: number }> => {
+  requestPasswordReset: async (email: string) => {
     const response = await api.post('/auth/request-password-reset/', { email });
     return response.data;
   },
-
-  resetPassword: async (email: string, code: string, password: string, password2: string): Promise<{ message: string; success: boolean }> => {
+  resetPassword: async (email: string, code: string, password: string, password2: string) => {
     const response = await api.post('/auth/reset-password/', { email, code, password, password2 });
     return response.data;
   },
 };
 
-// Categories API
-export const categoriesAPI = {
-  list: async (): Promise<PaginatedResponse<Category>> => {
-    try {
-      console.log('[api] categoriesAPI.list: Fetching categories...');
-      const response = await api.get<PaginatedResponse<Category>>('/categories/');
-      console.log('[api] categoriesAPI.list: Response received', {
-        status: response.status,
-        hasData: !!response.data,
-        hasResults: !!response.data?.results,
-        resultsLength: response.data?.results?.length,
-        isArray: Array.isArray(response.data),
-        dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
-        rawData: JSON.stringify(response.data, null, 2)
-      });
-      
-      // Categories endpoint now returns direct array (pagination disabled)
-      // Handle both paginated (legacy) and direct array responses
-      if (Array.isArray(response.data)) {
-        console.log('[api] categoriesAPI.list: Direct array response');
-        return { 
-          results: response.data, 
-          count: response.data.length,
-          next: null,
-          previous: null
-        };
-      } else if (response.data?.results && Array.isArray(response.data.results)) {
-        console.log('[api] categoriesAPI.list: Paginated response (legacy)');
-        return response.data;
-      } else {
-        console.error('[api] categoriesAPI.list: Unexpected response format', {
-          data: response.data,
-          dataType: typeof response.data,
-          isArray: Array.isArray(response.data),
-          keys: response.data ? Object.keys(response.data) : 'null'
-        });
-        return { 
-          results: [], 
-          count: 0,
-          next: null,
-          previous: null
-        };
-      }
-    } catch (error: any) {
-      console.error('[api] categoriesAPI.list: Error', {
-        error,
-        message: error?.message,
-        response: error?.response?.data,
-        status: error?.response?.status,
-        isNetworkError: error?.isNetworkError
-      });
-      throw error;
-    }
-  },
-
-  getBySlug: async (slug: string): Promise<Category> => {
-    const response = await api.get<Category>(`/categories/${slug}/`);
+// Conversations API (NEW - Vinted-style)
+export const conversationsAPI = {
+  start: async (listingId: number) => {
+    const response = await api.post('/conversations/start/', { listing_id: listingId });
     return response.data;
   },
-
-  create: async (name: string): Promise<Category> => {
-    const response = await api.post<Category>('/categories/', { name });
-    return response.data;
-  },
-};
-
-// Listings API
-export const listingsAPI = {
-  list: async (params?: {
-    search?: string;
-    category?: string;
-    status?: string;
-    condition?: string;
-    min_price?: number;
-    max_price?: number;
-    ordering?: string;
-    page?: number;
-    ai_detected?: string;
-  }): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>('/listings/', { params });
-    return response.data;
-  },
-
-  get: async (id: number): Promise<Listing> => {
-    const response = await api.get<Listing>(`/listings/${id}/`);
-    return response.data;
-  },
-
-  create: async (data: FormData | CreateListingData): Promise<Listing> => {
-    let formData: FormData;
-    if (data instanceof FormData) {
-      formData = data;
-    } else {
-      formData = new FormData();
-      formData.append('title', data.title);
-      formData.append('price', data.price);
-      formData.append('condition', data.condition);
-      formData.append('category_id', data.category_id.toString());
-      formData.append('image', data.image);
-      if (data.description) {
-        formData.append('description', data.description);
-      }
-    }
-
-    const response = await api.post<Listing>('/listings/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  },
-
-  update: async (id: number, data: Partial<CreateListingData>): Promise<Listing> => {
-    const formData = new FormData();
-    if (data.title) formData.append('title', data.title);
-    if (data.price) formData.append('price', data.price);
-    if (data.condition) formData.append('condition', data.condition);
-    if (data.category_id) formData.append('category_id', data.category_id.toString());
-    if (data.description) formData.append('description', data.description);
-    if (data.image) formData.append('image', data.image);
-
-    const response = await api.patch<Listing>(`/listings/${id}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/listings/${id}/`);
-  },
-
-  markSold: async (id: number): Promise<Listing> => {
-    const response = await api.post<Listing>(`/listings/${id}/mark_sold/`);
-    return response.data;
-  },
-
-  markReserved: async (id: number): Promise<Listing> => {
-    const response = await api.post<Listing>(`/listings/${id}/mark_reserved/`);
-    return response.data;
-  },
-
-  markAvailable: async (id: number): Promise<Listing> => {
-    const response = await api.post<Listing>(`/listings/${id}/mark_available/`);
-    return response.data;
-  },
-
-  myListings: async (includeDeleted = false): Promise<PaginatedResponse<Listing>> => {
-    const response = await api.get<PaginatedResponse<Listing>>('/listings/my_listings/', {
-      params: { include_deleted: includeDeleted },
-    });
-    return response.data;
-  },
-
-  save: async (id: number): Promise<{ message: string; is_saved: boolean }> => {
-    const response = await api.post(`/listings/${id}/save_listing/`);
-    return response.data;
-  },
-
-  unsave: async (id: number): Promise<{ message: string; is_saved: boolean }> => {
-    const response = await api.post(`/listings/${id}/unsave_listing/`);
-    return response.data;
-  },
-
-  saved: async (): Promise<PaginatedResponse<{ id: number; listing: Listing; created_at: string }>> => {
-    const response = await api.get('/listings/saved/');
+  list: async () => {
+    const response = await api.get('/conversations/');
     return response.data;
   },
 };
 
 // Messages API
 export const messagesAPI = {
-  list: async (listingId?: number): Promise<PaginatedResponse<Message>> => {
-    const response = await api.get<PaginatedResponse<Message>>('/messages/', {
-      params: listingId ? { listing: listingId } : undefined,
-    });
+  // NEW: Use conversation_id
+  list: async (conversationId: number) => {
+    const response = await api.get('/messages/', { params: { conversation: conversationId } });
     return response.data;
   },
-
-  send: async (listingId: number, content: string): Promise<Message> => {
-    const response = await api.post<Message>('/messages/', {
-      listing: listingId,
-      content,
-    });
+  // NEW: Send message with conversation_id
+  send: async (conversationId: number, content: string) => {
+    const response = await api.post('/messages/', { conversation_id: conversationId, content });
     return response.data;
   },
-
-  conversations: async (): Promise<Conversation[]> => {
-    const response = await api.get<Conversation[]>('/messages/conversations/');
-    return response.data;
-  },
-
-  markRead: async (id: number): Promise<Message> => {
-    const response = await api.post<Message>(`/messages/${id}/mark_read/`);
+  // Legacy: conversations endpoint (redirects to conversationsAPI.list)
+  conversations: async () => {
+    const response = await api.get('/messages/conversations/');
     return response.data;
   },
 };
 
-// Profile API
-export const profileAPI = {
-  get: async (): Promise<UserProfile> => {
-    const response = await api.get<UserProfile>('/profiles/me/');
+// Categories API
+export const categoriesAPI = {
+  list: async () => {
+    const response = await api.get('/categories/');
     return response.data;
   },
+};
 
-  update: async (data: UpdateProfileData): Promise<UserProfile> => {
-    const formData = new FormData();
-    if (data.name) formData.append('name', data.name);
-    if (data.course) formData.append('course', data.course);
-    if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
-
-    const response = await api.patch<UserProfile>('/profiles/me/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+// Listings API
+export const listingsAPI = {
+  list: async (params?: any) => {
+    const response = await api.get('/listings/', { params });
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/listings/${id}/`);
+    return response.data;
+  },
+  create: async (data: any) => {
+    const response = await api.post('/listings/', data);
+    return response.data;
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.patch(`/listings/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number) => {
+    const response = await api.delete(`/listings/${id}/`);
+    return response.data;
+  },
+  markSold: async (id: number) => {
+    const response = await api.post(`/listings/${id}/mark_sold/`);
     return response.data;
   },
 };
 
 // Saved Listings API
 export const savedListingsAPI = {
-  list: async (): Promise<any[]> => {
-    const response = await api.get('/listings/saved/');
-    return response.data.results || response.data;
+  list: async () => {
+    const response = await api.get('/saved-listings/');
+    return response.data;
   },
-
-  remove: async (listingId: number): Promise<void> => {
-    await api.post(`/listings/${listingId}/unsave_listing/`);
+  save: async (listingId: number) => {
+    const response = await api.post(`/listings/${listingId}/save_listing/`);
+    return response.data;
   },
-};
-
-// Reports API
-export const reportsAPI = {
-  create: async (listingId: number, reason: string, description?: string): Promise<any> => {
-    const response = await api.post('/reports/', {
-      listing: listingId,
-      reason,
-      description,
-    });
+  unsave: async (listingId: number) => {
+    const response = await api.post(`/listings/${listingId}/unsave_listing/`);
     return response.data;
   },
 };
 
-// AI API
-export const aiAPI = {
-  analyzeImage: async (imageFile?: File): Promise<{ tags: string[]; category_suggestions: string[]; description: string }> => {
-    try {
-      const formData = new FormData();
-      // Image is optional - endpoint returns defaults if no image
-      if (imageFile && imageFile.size > 0) {
-        formData.append('image', imageFile);
-        console.log('[api] analyzeImage: Sending image', imageFile.name, imageFile.size);
-      } else {
-        console.log('[api] analyzeImage: No image provided, requesting defaults');
-      }
-      
-      const response = await api.post('/ai/analyze-image/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      
-      console.log('[api] analyzeImage: Response received', {
-        status: response.status,
-        data: response.data,
-        hasCategorySuggestions: !!response.data?.category_suggestions,
-        categorySuggestionsLength: response.data?.category_suggestions?.length,
-        categorySuggestionsType: Array.isArray(response.data?.category_suggestions) ? 'array' : typeof response.data?.category_suggestions
-      });
-      
-      // Validate response structure
-      if (!response.data) {
-        console.warn('[api] analyzeImage: Empty response data');
-        return {
-          tags: [],
-          category_suggestions: [],
-          description: 'Empty response from server'
-        };
-      }
-      
-      // Ensure category_suggestions is an array
-      const categorySuggestions = Array.isArray(response.data.category_suggestions) 
-        ? response.data.category_suggestions 
-        : [];
-      
-      const result = {
-        tags: Array.isArray(response.data.tags) ? response.data.tags : [],
-        category_suggestions: categorySuggestions,
-        description: response.data.description || ''
-      };
-      
-      console.log('[api] analyzeImage: Parsed result', result);
-      return result;
-      
-    } catch (error: any) {
-      console.error('[api] analyzeImage: Error occurred', {
-        error,
-        message: error?.message,
-        response: error?.response?.data,
-        status: error?.response?.status,
-        isNetworkError: error?.isNetworkError
-      });
-      
-      // Handle 404 specifically (endpoint not deployed yet)
-      if (error.response?.status === 404) {
-        console.warn('[api] analyzeImage: 404 - endpoint not found, returning defaults');
-        return {
-          tags: [],
-          category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
-          description: 'AI analysis unavailable. Please select a category manually.'
-        };
-      }
-      
-      // For other errors, return defaults instead of throwing
-      return {
-        tags: [],
-        category_suggestions: ['Electronics', 'Books', 'Fashion', 'Furniture', 'Kitchen', 'Sports', 'Stationery', 'Other'],
-        description: 'Could not analyze image. Please select a category manually.'
-      };
-    }
-  },
-};
-
-// Search API
-export const premiumAPI = {
-  // AI Price Suggestions
-  suggestPrice: async (data: {
-    title?: string;
-    description?: string;
-    category?: number | string;
-    condition?: string;
-    image?: File;
-  }) => {
-    const formData = new FormData();
-    if (data.title) formData.append('title', data.title);
-    if (data.description) formData.append('description', data.description);
-    if (data.category) formData.append('category', String(data.category));
-    if (data.condition) formData.append('condition', data.condition);
-    if (data.image) formData.append('image', data.image);
-
-    const response = await api.post('/ai/suggest-price/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+// Profile API
+export const profileAPI = {
+  get: async (id?: number) => {
+    const url = id ? `/profiles/${id}/` : '/profiles/';
+    const response = await api.get(url);
     return response.data;
   },
-
-  // Generate Listing Content
-  generateContent: async (image: File, category?: number | string) => {
-    const formData = new FormData();
-    formData.append('image', image);
-    if (category) formData.append('category', String(category));
-
-    const response = await api.post('/ai/generate-content/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  update: async (data: any) => {
+    const response = await api.patch('/profiles/', data);
     return response.data;
   },
-
-  // Upload Avatar
-  uploadAvatar: async (avatarUrl?: string, profilePhoto?: File) => {
+  uploadAvatar: async (file: File) => {
     const formData = new FormData();
-    if (avatarUrl) formData.append('avatar_url', avatarUrl);
-    if (profilePhoto) formData.append('profile_photo', profilePhoto);
-
+    formData.append('avatar', file);
     const response = await api.post('/profile/upload-avatar/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
   },
+};
 
-  // Draft Listings
-  getDrafts: async () => {
-    const response = await api.get('/drafts/');
-    return response.data;
-  },
-
-  createDraft: async (data: {
-    title?: string;
-    description?: string;
-    price?: number;
-    category?: number;
-    condition?: string;
-    images_data?: any[];
-  }) => {
-    const response = await api.post('/drafts/', data);
-    return response.data;
-  },
-
-  updateDraft: async (id: number, data: any) => {
-    const response = await api.patch(`/drafts/${id}/`, data);
-    return response.data;
-  },
-
-  deleteDraft: async (id: number) => {
-    const response = await api.delete(`/drafts/${id}/`);
-    return response.data;
-  },
-
-  // Recently Viewed
-  getRecentlyViewed: async () => {
-    const response = await api.get('/recently-viewed/');
-    return response.data;
-  },
-
-  markAsViewed: async (listingId: number) => {
-    const response = await api.post('/recently-viewed/mark_viewed/', {
-      listing_id: listingId,
-    });
-    return response.data;
-  },
-
-  // Saved Searches
-  getSavedSearches: async () => {
-    const response = await api.get('/saved-searches/');
-    return response.data;
-  },
-
-  createSavedSearch: async (data: {
-    name: string;
-    query?: string;
-    category?: number;
-    min_price?: number;
-    max_price?: number;
-    condition?: string;
-    alert_enabled?: boolean;
-  }) => {
-    const response = await api.post('/saved-searches/', data);
-    return response.data;
-  },
-
-  updateSavedSearch: async (id: number, data: any) => {
-    const response = await api.patch(`/saved-searches/${id}/`, data);
-    return response.data;
-  },
-
-  deleteSavedSearch: async (id: number) => {
-    const response = await api.delete(`/saved-searches/${id}/`);
-    return response.data;
-  },
-
-  toggleSearchAlert: async (id: number) => {
-    const response = await api.post(`/saved-searches/${id}/toggle_alert/`);
-    return response.data;
-  },
-
-  checkAlerts: async () => {
-    const response = await api.get('/saved-searches/check_alerts/');
-    return response.data;
-  },
-
-  // Seller Dashboard
-  getSellerDashboard: async () => {
+// Premium API
+export const premiumAPI = {
+  getDashboard: async () => {
     const response = await api.get('/seller/dashboard/');
     return response.data;
   },
+  getNotifications: async () => {
+    const response = await api.get('/notifications/');
+    return response.data;
+  },
 };
 
+// Search API
 export const searchAPI = {
-  save: async (query: string, categoryId?: number): Promise<any> => {
-    const response = await api.post('/search/save/', {
-      query,
-      category_id: categoryId,
-    });
+  search: async (query: string, params?: any) => {
+    const response = await api.get('/listings/', { params: { search: query, ...params } });
     return response.data;
   },
-  suggestions: async (query: string): Promise<{ suggestions: string[] }> => {
-    const response = await api.get('/search/suggestions/', {
-      params: { q: query },
-    });
+  save: async (data: any) => {
+    const response = await api.post('/search/save/', data);
     return response.data;
   },
-};
-
-// Reviews API
-export const reviewsAPI = {
-  list: async (sellerId?: number, listingId?: number): Promise<any> => {
-    const params: any = {};
-    if (sellerId) params.seller_id = sellerId;
-    if (listingId) params.listing_id = listingId;
-    const response = await api.get('/reviews/', { params });
-    return response.data;
-  },
-
-  create: async (data: {
-    seller: number;
-    listing?: number;
-    rating: number;
-    comment: string;
-    is_verified_purchase?: boolean;
-  }): Promise<any> => {
-    const response = await api.post('/reviews/', data);
-    return response.data;
-  },
-
-  sellerStats: async (sellerId: number): Promise<{
-    seller_id: number;
-    total_reviews: number;
-    average_rating: number;
-    rating_breakdown: { [key: number]: number };
-  }> => {
-    const response = await api.get('/reviews/seller_stats/', {
-      params: { seller_id: sellerId },
-    });
+  suggestions: async (query: string) => {
+    const response = await api.get('/search/suggestions/', { params: { q: query } });
     return response.data;
   },
 };
