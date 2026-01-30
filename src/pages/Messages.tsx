@@ -202,37 +202,52 @@ export default function Messages() {
                 <ArrowLeft size={24} className="text-gray-900" />
               </button>
               {(() => {
-                // Get seller profile photo - try avatar, avatar_url, or profile_photo
-                const profile = selectedConversation.other_user.profile;
-                const profilePhoto = profile.avatar || profile.avatar_url || profile.profile_photo;
-                return profilePhoto ? (
-                  <img
-                    src={profilePhoto}
-                    alt={selectedConversation.other_user.profile.name}
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      // Fallback to initials if image fails to load
-                      const initials = getInitials(selectedConversation.other_user.profile.name);
-                      e.currentTarget.style.display = 'none';
-                      if (e.currentTarget.parentElement) {
-                        e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
-                      }
-                    }}
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    {getInitials(selectedConversation.other_user.profile.name)}
-                  </div>
+                // Always use other_user from conversation (the OTHER participant)
+                const otherUser = selectedConversation.other_user;
+                const avatarUrl = otherUser?.profile?.avatar_url || 
+                                 otherUser?.profile?.avatar || 
+                                 otherUser?.avatar_url || 
+                                 null;
+                const displayName = otherUser?.profile?.name || 
+                                  otherUser?.name || 
+                                  otherUser?.email || 
+                                  'User';
+                const subtitle = selectedConversation.listing?.title || 
+                                otherUser?.profile?.course || 
+                                'University of Hertfordshire';
+                
+                return (
+                  <>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          // Fallback to initials if image fails to load
+                          const initials = getInitials(displayName);
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = `<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">${initials}</div>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                        {getInitials(displayName)}
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="font-semibold text-gray-900">
+                        {displayName}
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {subtitle}
+                      </p>
+                    </div>
+                  </>
                 );
               })()}
-              <div>
-                <h2 className="font-semibold text-gray-900">
-                  {selectedConversation.other_user.profile.name || selectedConversation.other_user.email}
-                </h2>
-                <p className="text-xs text-gray-500">
-                  {selectedConversation.other_user.profile.course || 'University of Hertfordshire'}
-                </p>
-              </div>
             </div>
             <button className="touch-target -mr-2">
               <MoreVertical size={20} className="text-gray-700" />
