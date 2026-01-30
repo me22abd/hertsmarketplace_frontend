@@ -116,6 +116,10 @@ export const categoriesAPI = {
     const response = await api.get('/categories/');
     return response.data;
   },
+  create: async (name: string) => {
+    const response = await api.post('/categories/', { name });
+    return response.data;
+  },
 };
 
 // Listings API
@@ -177,6 +181,10 @@ export const savedListingsAPI = {
     return response.data;
   },
   unsave: async (listingId: number) => {
+    const response = await api.post(`/listings/${listingId}/unsave_listing/`);
+    return response.data;
+  },
+  remove: async (listingId: number) => {
     const response = await api.post(`/listings/${listingId}/unsave_listing/`);
     return response.data;
   },
@@ -267,6 +275,26 @@ export const reviewsAPI = {
   },
   get: async (id: number) => {
     const response = await api.get(`/reviews/${id}/`);
+    return response.data;
+  },
+};
+
+// AI API
+export const aiAPI = {
+  analyzeImage: async (imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    const response = await api.post('/ai/analyze-image/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  suggestPrice: async (data: any) => {
+    const response = await api.post('/ai/suggest-price/', data);
+    return response.data;
+  },
+  generateContent: async (data: any) => {
+    const response = await api.post('/ai/generate-content/', data);
     return response.data;
   },
 };
