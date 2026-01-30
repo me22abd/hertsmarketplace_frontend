@@ -187,7 +187,7 @@ export const listingsAPI = {
 // Saved Listings API
 export const savedListingsAPI = {
   list: async () => {
-    const response = await api.get('/saved-listings/');
+    const response = await api.get('/listings/saved/');
     return response.data;
   },
   save: async (listingId: number) => {
