@@ -293,30 +293,45 @@ export default function Messages() {
               <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
             </div>
           ) : (
-            messages.map((message) => {
-              const isOwn = message.sender.id === user?.id;
+            messages.map((message, index) => {
+              // Use sender_id for alignment (backend returns this)
+              const myId = Number(user?.id);
+              const senderId = Number((message as any).sender_id || message.sender?.id);
+              const isMine = senderId === myId;
+              
+              // Debug log for first message only
+              if (index === 0) {
+                console.log({ myId, senderId, isMine, msg: message });
+              }
+              
+              // Check if previous message is from same sender (for grouping)
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const prevSenderId = prevMessage ? Number((prevMessage as any).sender_id || prevMessage.sender?.id) : null;
+              const isGrouped = prevSenderId === senderId;
+              
               return (
                 <div
                   key={message.id}
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-1' : 'mt-2'}`}
                 >
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
-                      isOwn
-                        ? 'bg-primary text-white rounded-br-sm'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {message.content}
-                    </p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        isOwn ? 'text-white/70' : 'text-gray-500'
+                  <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                    <div
+                      className={`rounded-2xl px-4 py-2.5 ${
+                        isMine
+                          ? 'bg-primary text-white rounded-br-sm'
+                          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                       }`}
                     >
-                      {formatRelativeTime(message.created_at)}
-                    </p>
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                        {message.content}
+                      </p>
+                    </div>
+                    {/* Show timestamp only if not grouped or is last message */}
+                    {(!isGrouped || index === messages.length - 1) && (
+                      <p className={`text-xs mt-1 px-2 ${isMine ? 'text-gray-400' : 'text-gray-400'}`}>
+                        {formatRelativeTime(message.created_at)}
+                      </p>
+                    )}
                   </div>
                 </div>
               );

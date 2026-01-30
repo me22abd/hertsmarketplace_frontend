@@ -53,7 +53,9 @@ export interface Message {
   listing: number;
   listing_title: string;
   sender: User;
+  sender_id?: number; // Backend returns this for alignment
   recipient: User;
+  recipient_id?: number; // Backend returns this
   content: string;
   is_read: boolean;
   created_at: string;
