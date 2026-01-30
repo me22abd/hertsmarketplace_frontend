@@ -245,8 +245,8 @@ export const searchAPI = {
     const response = await api.get('/listings/', { params: { search: query } });
     return response.data;
   },
-  save: async (data: any) => {
-    const response = await api.post('/search/save/', data);
+  save: async (query: string, categoryId?: number) => {
+    const response = await api.post('/search/save/', { query, category: categoryId });
     return response.data;
   },
   suggestions: async (query: string) => {
