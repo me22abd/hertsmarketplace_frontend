@@ -62,10 +62,14 @@ export interface Message {
 }
 
 export interface Conversation {
+  id?: number; // Conversation ID (new)
   listing: Listing;
+  listing_id?: number; // For creating conversations
   other_user: User;
   last_message: Message;
   unread_count: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PaginatedResponse<T> {

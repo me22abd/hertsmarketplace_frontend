@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { authAPI } from '@/services/api';
+import { authAPI, streamAPI } from '@/services/api';
+import { initializeStreamClient, disconnectStreamClient } from '@/services/streamChat';
 import type { User, LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthState {
@@ -31,6 +32,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('refresh_token', tokens.refresh);
       
       const user = await authAPI.getCurrentUser();
+      
+      // Initialize Stream Chat
+      try {
+        const streamTokenData = await streamAPI.getToken();
+        await initializeStreamClient(streamTokenData.user_id, streamTokenData.token);
+      } catch (streamError) {
+        console.warn('Failed to initialize Stream Chat:', streamError);
+        // Don't fail login if Stream initialization fails
+      }
+      
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || 'Login failed';
@@ -57,7 +68,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: () => {
+  logout: async () => {
+    await disconnectStreamClient();
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     set({ user: null, isAuthenticated: false });
@@ -73,6 +85,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true });
       const user = await authAPI.getCurrentUser();
+      
+      // Initialize Stream Chat if user is logged in
+      try {
+        const streamTokenData = await streamAPI.getToken();
+        await initializeStreamClient(streamTokenData.user_id, streamTokenData.token);
+      } catch (streamError) {
+        console.warn('Failed to initialize Stream Chat:', streamError);
+        // Don't fail user load if Stream initialization fails
+      }
+      
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (error) {
       localStorage.removeItem('access_token');

@@ -45,12 +45,14 @@ export const getStatusColor = (status: ListingStatus): string => {
 };
 
 // Get status label
-export const getStatusLabel = (status: ListingStatus): string => {
+export const getStatusLabel = (status: ListingStatus | undefined | null): string => {
+  if (!status) return '';
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 // Get condition label
-export const getConditionLabel = (condition: ListingCondition): string => {
+export const getConditionLabel = (condition: ListingCondition | undefined | null): string => {
+  if (!condition) return '';
   return condition.charAt(0).toUpperCase() + condition.slice(1);
 };
 
