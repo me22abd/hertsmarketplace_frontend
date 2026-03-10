@@ -332,13 +332,33 @@ export default function CreateListing() {
       }
       
       // Add primary image
-      if (images[0]) {
+      if (images.length === 0) {
+        toast.error('Please add at least one image');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (images[0] && images[0].file) {
         data.append('image', images[0].file);
+      } else {
+        toast.error('Primary image file is missing');
+        setIsSubmitting(false);
+        return;
       }
       
       // Add additional images (up to 14 more)
       for (let i = 1; i < images.length && i < MAX_IMAGES; i++) {
-        data.append(`additional_images_${i - 1}`, images[i].file);
+        if (images[i] && images[i].file) {
+          data.append(`additional_images_${i - 1}`, images[i].file);
+        }
+      }
+
+      // Debug: Log FormData contents (in development only)
+      if (import.meta.env.DEV) {
+        console.log('FormData entries:');
+        for (const [key, value] of data.entries()) {
+          console.log(key, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+        }
       }
 
       await listingsAPI.create(data);

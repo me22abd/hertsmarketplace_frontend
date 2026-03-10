@@ -148,7 +148,12 @@ export const listingsAPI = {
     return response.data;
   },
   create: async (data: any) => {
-    const response = await api.post('/listings/', data);
+    // For FormData, axios will automatically set Content-Type with boundary
+    // Don't set it manually - let axios handle it
+    const config = data instanceof FormData 
+      ? { headers: {} }  // Empty headers object - axios will add Content-Type with boundary
+      : {};
+    const response = await api.post('/listings/', data, config);
     return response.data;
   },
   update: async (id: number, data: any) => {
