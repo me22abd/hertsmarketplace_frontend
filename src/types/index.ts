@@ -28,6 +28,7 @@ export interface Category {
 }
 
 export type ListingStatus = 'available' | 'reserved' | 'sold';
+export type PaymentOption = 'in_person_only' | 'online_allowed';
 export type ListingCondition = 'new' | 'good' | 'used';
 
 export interface Listing {
@@ -46,6 +47,8 @@ export interface Listing {
   seller: User;
   category_name?: string;
   category?: Category;
+  payment_option?: PaymentOption;
+  collection_window?: string;
 }
 
 export interface Message {

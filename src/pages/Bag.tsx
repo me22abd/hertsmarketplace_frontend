@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Trash2, MessageCircle, ShoppingBag } from 'lucide-react';
-import { savedListingsAPI } from '@/services/api';
+import { savedListingsAPI, listingsAPI } from '@/services/api';
 import type { SavedListing } from '@/types';
 import Loading from '@/components/Loading';
 import BottomNav from '@/components/BottomNav';
@@ -39,8 +39,16 @@ export default function Bag() {
     }
   };
 
-  const handleContactSeller = (item: SavedListing) => {
-    navigate('/messages', { state: { listing: item.listing } });
+  const handleContactSeller = async (item: SavedListing) => {
+    try {
+      // Reserve the item for in-person collection before starting chat
+      await listingsAPI.reserveInPerson(item.listing.id);
+    } catch (error: any) {
+      // If reservation fails (e.g. already reserved), still let them chat
+      console.warn('Failed to reserve from bag before contacting seller', error);
+    } finally {
+      navigate('/messages', { state: { listing: item.listing } });
+    }
   };
 
   const totalAmount = bagItems.reduce((sum, item) => {
@@ -220,11 +228,24 @@ export default function Bag() {
 
             {/* Action Button */}
             <button
-              onClick={() => {
-                if (bagItems.length > 0) {
-                  navigate('/messages');
-                  toast.success('Go to Messages to contact sellers');
+              onClick={async () => {
+                if (bagItems.length === 0) return;
+
+                // Try to reserve all available items in the bag for in-person collection
+                const reservable = bagItems.filter(
+                  (item) => item.listing.status === 'available'
+                );
+
+                for (const item of reservable) {
+                  try {
+                    await listingsAPI.reserveInPerson(item.listing.id);
+                  } catch (error) {
+                    console.warn('Failed to reserve item from bag', item.listing.id, error);
+                  }
                 }
+
+                navigate('/messages');
+                toast.success('Go to Messages to arrange collection with sellers');
               }}
               disabled={bagItems.length === 0}
               className="w-full bg-primary text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
