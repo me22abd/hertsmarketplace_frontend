@@ -8,9 +8,10 @@ API_URL = API_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Do NOT set Content-Type globally.
+  // Axios will set the correct header automatically:
+  // - application/json for plain objects
+  // - multipart/form-data for FormData (needed for file uploads)
 });
 
 // Add token to requests
@@ -166,8 +167,12 @@ export const listingsAPI = {
     const response = await api.post(`/listings/${id}/mark_available/`);
     return response.data;
   },
-  markReserved: async (id: number) => {
-    const response = await api.post(`/listings/${id}/mark_reserved/`);
+  reserveInPerson: async (id: number) => {
+    const response = await api.post(`/listings/${id}/reserve_in_person/`);
+    return response.data;
+  },
+  cancelReservation: async (id: number) => {
+    const response = await api.post(`/listings/${id}/cancel_reservation/`);
     return response.data;
   },
   myListings: async () => {

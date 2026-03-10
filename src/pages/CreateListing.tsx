@@ -27,6 +27,8 @@ export default function CreateListing() {
     price: '',
     category: '',
     condition: 'good' as ListingCondition,
+    payment_option: 'in_person_only' as 'in_person_only' | 'online_allowed',
+    collection_window: '',
   });
 
   const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
@@ -309,12 +311,25 @@ export default function CreateListing() {
 
     try {
       setIsSubmitting(true);
+      
+      // Find category ID from slug
+      const selectedCategory = categories.find(c => c.slug === formData.category || c.id.toString() === formData.category);
+      if (!selectedCategory) {
+        toast.error('Please select a valid category');
+        setIsSubmitting(false);
+        return;
+      }
+      
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description);
       data.append('price', formData.price);
-      data.append('category', formData.category);
+      data.append('category_id', selectedCategory.id.toString());
       data.append('condition', formData.condition);
+      data.append('payment_option', formData.payment_option);
+      if (formData.collection_window.trim()) {
+        data.append('collection_window', formData.collection_window.trim());
+      }
       
       // Add primary image
       if (images[0]) {
@@ -330,7 +345,14 @@ export default function CreateListing() {
       toast.success('Listing created successfully!');
       navigate('/my-listings');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Failed to create listing');
+      // Show detailed error message from backend
+      const errorMsg = error.response?.data?.message || 
+                       error.response?.data?.error || 
+                       error.response?.data?.detail || 
+                       error.message || 
+                       'Failed to create listing';
+      toast.error(errorMsg);
+      console.error('Create listing error:', error.response?.data || error);
     } finally {
       setIsSubmitting(false);
     }
@@ -423,6 +445,49 @@ export default function CreateListing() {
               </div>
             </label>
           )}
+        </div>
+
+        {/* Payment Option */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            Payment method *
+          </label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="payment_option"
+                value="in_person_only"
+                checked={formData.payment_option === 'in_person_only'}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, payment_option: e.target.value as any }))
+                }
+              />
+              <span className="text-sm text-gray-700">In person only (cash or bank transfer)</span>
+            </label>
+            <label className="flex items-center gap-2 opacity-60 cursor-not-allowed">
+              <input type="radio" name="payment_option" value="online_allowed" disabled />
+              <span className="text-sm text-gray-700">
+                In person or online (coming soon)
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Collection Window */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            When can buyers collect? <span className="text-gray-400 text-xs">(optional)</span>
+          </label>
+          <textarea
+            value={formData.collection_window}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, collection_window: e.target.value }))
+            }
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            rows={2}
+            placeholder="E.g. Weekdays 5–8 pm at College Lane campus library"
+          />
         </div>
 
         {/* Title */}
