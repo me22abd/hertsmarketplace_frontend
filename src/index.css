@@ -16,11 +16,15 @@
     @apply bg-bg font-sans antialiased;
     margin: 0;
     padding: 0;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
   }
 
   #root {
-    @apply min-h-screen;
+    @apply min-h-screen flex justify-center;
+    width: 100%;
+    max-width: 100%;
   }
 
   /* iPhone Safe Area Support */
@@ -130,7 +134,7 @@
 
   /* Container */
   .container-app {
-    @apply max-w-md mx-auto px-4 pb-20;
+    @apply w-full max-w-md mx-auto px-4 pb-20;
   }
 
   /* Bottom nav spacer */
