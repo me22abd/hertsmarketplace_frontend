@@ -97,7 +97,7 @@ export default function Bag() {
                   <div className="flex gap-3 p-3">
                     {/* Item Image */}
                     <div
-                      onClick={() => navigate(`/listings/${item.listing.id}`)}
+                      onClick={() => navigate(`/listing/${item.listing.id}`)}
                       className="w-24 h-24 rounded-xl bg-gray-50 flex-shrink-0 overflow-hidden cursor-pointer"
                     >
                       {item.listing.image ? (
@@ -118,7 +118,7 @@ export default function Bag() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0 pr-2">
                           <h3
-                            onClick={() => navigate(`/listings/${item.listing.id}`)}
+                            onClick={() => navigate(`/listing/${item.listing.id}`)}
                             className="font-semibold text-gray-900 text-sm truncate cursor-pointer hover:text-primary"
                           >
                             {item.listing.title}

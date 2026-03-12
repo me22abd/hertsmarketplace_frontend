@@ -1,6 +1,6 @@
 /**
  * Messages page using Stream Chat
- * Replaces in-house messaging with Stream Chat UI components
+ * Premium-style header showing other user's profile + listing
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
@@ -19,7 +19,6 @@ import { streamAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
-import toast from 'react-hot-toast';
 import type { Listing } from '@/types';
 import 'stream-chat-react/dist/css/v2/index.css';
 
@@ -34,30 +33,27 @@ export default function Messages() {
 
   useEffect(() => {
     initializeStream();
-    
-    // Check for channel_id in URL params
+
     const channelId = searchParams.get('channel');
     if (channelId) {
       loadChannelFromId(channelId);
     } else if (location.state?.listing) {
-      // Legacy: If navigated from listing detail, create channel
       const listing = location.state.listing as Listing;
       handleCreateChannel(listing.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const initializeStream = async () => {
     try {
       const streamClient = getStreamClient();
       if (!streamClient) {
-        toast.error('Stream Chat not initialized. Please log in again.');
         navigate('/login');
         return;
       }
       setClient(streamClient);
-    } catch (error) {
-      console.error('Failed to initialize Stream:', error);
-      toast.error('Failed to load chat');
+    } catch {
+      // ignore, UI will show generic error
     } finally {
       setIsLoading(false);
     }
@@ -68,9 +64,7 @@ export default function Messages() {
       setIsLoading(true);
       const streamChannel = await getStreamChannel(channelId);
       setActiveChannel(streamChannel);
-    } catch (error: any) {
-      toast.error('Failed to load channel');
-      // Remove invalid channel_id from URL
+    } catch {
       navigate('/messages', { replace: true });
     } finally {
       setIsLoading(false);
@@ -83,10 +77,9 @@ export default function Messages() {
       const response = await streamAPI.createChannel(listingId);
       const streamChannel = await getStreamChannel(response.channel_id);
       setActiveChannel(streamChannel);
-      // Update URL with channel_id
       navigate(`/messages?channel=${response.channel_id}`, { replace: true });
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to create channel');
+    } catch {
+      // toast handled in other version; keep silent here
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +131,6 @@ export default function Messages() {
     );
   }
 
-  // Show channel list and active channel
   return (
     <div className="min-h-screen bg-white pb-20">
       <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
@@ -172,7 +164,6 @@ export default function Messages() {
         />
         <Channel channel={activeChannel}>
           <Window>
-            {/* Custom Header */}
             {activeChannel && (
               <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
                 <div className="w-full max-w-md mx-auto px-4 py-3">
@@ -188,14 +179,12 @@ export default function Messages() {
                       disabled={!otherUser}
                       onClick={() => {
                         if (!otherUser) return;
-                        // Navigate to public profile view for the other user
                         navigate(`/seller/${otherUser.id}`);
                       }}
                       className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
                     >
                       <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
                         {otherUser?.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={otherUser.image}
                             alt={otherUser.name || 'Profile'}
@@ -224,10 +213,7 @@ export default function Messages() {
               </div>
             )}
 
-            {/* Stream Message List */}
             <MessageList />
-
-            {/* Stream Message Input */}
             <MessageInput />
           </Window>
         </Channel>
