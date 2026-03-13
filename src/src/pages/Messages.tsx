@@ -215,7 +215,7 @@ export default function Messages() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h2 className="text-sm font-semibold text-gray-900 truncate">
-                              {otherUser?.name || otherUser?.email || 'Chat'}
+                              {otherUser?.name || otherUser?.email || 'Student'}
                             </h2>
                             {activeChannel?.data?.listing?.title && (
                               <p className="text-[11px] text-gray-500 truncate">
