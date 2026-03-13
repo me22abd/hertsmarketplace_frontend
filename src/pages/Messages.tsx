@@ -13,6 +13,7 @@ import {
   MessageInput,
   ChannelList,
   ChannelPreviewMessenger,
+  useChannelStateContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
 import { streamAPI } from '@/services/api';
@@ -21,6 +22,38 @@ import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
 import type { Listing } from '@/types';
 import 'stream-chat-react/dist/css/v2/index.css';
+
+function QuickReplies() {
+  const { channel } = useChannelStateContext();
+
+  const handleClick = async (text: string) => {
+    if (!channel) return;
+    try {
+      await channel.sendMessage({ text });
+    } catch {
+      // ignore – main input still works
+    }
+  };
+
+  const options = ["I'll be there", 'Okay, thanks', 'Yes, that works'];
+
+  return (
+    <div className="px-3 pb-2">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        {options.map((text) => (
+          <button
+            key={text}
+            type="button"
+            onClick={() => handleClick(text)}
+            className="px-3 py-1 rounded-full bg-white border border-gray-200 text-[11px] text-gray-700 shadow-xs hover:bg-gray-50 whitespace-nowrap"
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -110,15 +143,6 @@ export default function Messages() {
       .join('');
     return initials || 'U';
   }, [otherUser]);
-
-  const handleQuickReply = async (text: string) => {
-    if (!activeChannel) return;
-    try {
-      await activeChannel.sendMessage({ text });
-    } catch {
-      // Fail silently – main input is still available
-    }
-  };
 
   if (isLoading && !client) {
     return <Loading fullScreen />;
@@ -231,26 +255,12 @@ export default function Messages() {
                     </div>
                   )}
 
-                  <div className="flex flex-col flex-1 bg-slate-50">
+                    <div className="flex flex-col flex-1 bg-slate-50">
                     <div className="flex-1 px-1 pt-1">
                       <MessageList />
                     </div>
 
-                    {/* Quick reply chips */}
-                    <div className="px-3 pb-2">
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {["I'll be there", 'Okay, thanks', 'Yes, that works'].map((text) => (
-                          <button
-                            key={text}
-                            type="button"
-                            onClick={() => handleQuickReply(text)}
-                            className="px-3 py-1 rounded-full bg-white border border-gray-200 text-[11px] text-gray-700 shadow-xs hover:bg-gray-50 whitespace-nowrap"
-                          >
-                            {text}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <QuickReplies />
 
                     <div className="border-t border-gray-100 bg-white px-2 pb-2">
                       <MessageInput focus />
