@@ -12,7 +12,6 @@ import {
   MessageList,
   MessageInput,
   ChannelList,
-  ChannelPreviewMessenger,
   useChannelStateContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
@@ -52,6 +51,55 @@ function QuickReplies() {
         ))}
       </div>
     </div>
+  );
+}
+
+function InboxPreview(props: any) {
+  const { channel, setActiveChannel } = props;
+
+  const members = Object.values(channel.state?.members || {}) as any[];
+  const currentUserId = String(props.client?.userID || '');
+  const otherMember = members.find((m) => m.user?.id !== currentUserId) || members[0];
+  const otherUser = otherMember?.user;
+
+  const name: string =
+    (otherUser?.name as string) ||
+    (otherUser?.email as string) ||
+    (otherUser?.id ? `Student ${otherUser.id}` : 'Student');
+
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('') || 'U';
+
+  const lastMessageText = channel.state?.messages?.length
+    ? channel.state.messages[channel.state.messages.length - 1].text || ''
+    : '';
+
+  return (
+    <button
+      type="button"
+      onClick={() => setActiveChannel?.(channel)}
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-gray-50"
+    >
+      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
+        {otherUser?.image ? (
+          <img src={otherUser.image} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
+        {lastMessageText ? (
+          <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
+        ) : (
+          <p className="text-[11px] text-gray-400 truncate">No messages yet</p>
+        )}
+      </div>
+    </button>
   );
 }
 
@@ -187,7 +235,7 @@ export default function Messages() {
                     <ChannelList
                       filters={{ members: { $in: [String(user?.id)] } }}
                       sort={{ last_message_at: -1 }}
-                      Preview={ChannelPreviewMessenger}
+                      Preview={InboxPreview}
                       EmptyStateIndicator={() => (
                         <div className="flex flex-col items-center justify-center py-12 px-4">
                           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
