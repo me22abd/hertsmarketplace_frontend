@@ -23,6 +23,7 @@ import Profile from '@/pages/Profile';
 import Notifications from '@/pages/Notifications';
 import EditProfile from '@/pages/EditProfile';
 import MyListings from '@/pages/MyListings';
+import SellerProfile from '@/pages/SellerProfile';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
 
@@ -174,6 +175,15 @@ function App() {
           element={
             <ProtectedRoute>
               <MyListings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/seller/:id"
+          element={
+            <ProtectedRoute>
+              <SellerProfile />
             </ProtectedRoute>
           }
         />

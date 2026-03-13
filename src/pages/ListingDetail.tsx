@@ -42,6 +42,7 @@ export default function ListingDetail() {
   } | null>(null);
   const [imageError, setImageError] = useState(false);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [isReserving, setIsReserving] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -154,6 +155,43 @@ export default function ListingDetail() {
       navigate(`/messages?channel=${response.channel_id}`);
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to start conversation');
+    }
+  };
+
+  const handleReserveInPerson = async () => {
+    if (!listing) return;
+
+    try {
+      setIsReserving(true);
+      const response = await listingsAPI.reserveInPerson(listing.id);
+      // Backend returns { listing, deal }
+      if (response?.listing) {
+        setListing(response.listing);
+        toast.success('Item reserved for in-person payment');
+      } else {
+        // Fallback if backend later changes shape
+        setListing(response);
+        toast.success('Item reserved');
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to reserve item');
+    } finally {
+      setIsReserving(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    if (!listing) return;
+
+    try {
+      setIsReserving(true);
+      const updated = await listingsAPI.cancelReservation(listing.id);
+      setListing(updated);
+      toast.success('Reservation cancelled');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to cancel reservation');
+    } finally {
+      setIsReserving(false);
     }
   };
 
@@ -311,6 +349,22 @@ export default function ListingDetail() {
               </span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
+              <span className="text-sm text-gray-500">Payment</span>
+              <span className="text-sm font-medium text-gray-900">
+                {listing.payment_option === 'in_person_only'
+                  ? 'In person only (cash or bank transfer)'
+                  : 'In person or online'}
+              </span>
+            </div>
+            {listing.collection_window && (
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-500">Collection time</span>
+                <span className="text-sm font-medium text-gray-900 text-right">
+                  {listing.collection_window}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <span className="text-sm text-gray-500">Listed</span>
               <span className="text-sm font-medium text-gray-900">
                 {formatRelativeTime(listing.created_at)}
@@ -321,7 +375,11 @@ export default function ListingDetail() {
           {/* Seller Info */}
           {!isOwner && listing.seller?.profile && (
             <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/seller/${listing.seller.id}`)}
+                className="w-full flex items-center gap-3 text-left"
+              >
                 <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
                   {getInitials(listing.seller.profile.name)}
                 </div>
@@ -333,10 +391,10 @@ export default function ListingDetail() {
                     {listing.seller.profile.course || 'University of Hertfordshire'}
                   </p>
                 </div>
-                <button className="px-4 py-2 bg-white rounded-xl text-sm font-medium text-gray-900 border border-gray-200">
+                <span className="px-4 py-2 bg-white rounded-xl text-sm font-medium text-gray-900 border border-gray-200">
                   View profile
-                </button>
-              </div>
+                </span>
+              </button>
             </div>
           )}
 
@@ -394,16 +452,53 @@ export default function ListingDetail() {
       </div>
 
       {/* Fixed Bottom Bar */}
-      {!isOwner && listing.status === 'available' && (
+      {!isOwner && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20">
-          <div className="w-full max-w-md mx-auto px-4 py-3">
-            <button
-              onClick={handleContactSeller}
-              className="w-full bg-primary text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2"
-            >
-              <MessageCircle size={20} />
-              Contact Seller
-            </button>
+          <div className="w-full max-w-md mx-auto px-4 py-3 space-y-2">
+            {listing.status === 'available' && (
+              <>
+                <button
+                  onClick={handleReserveInPerson}
+                  disabled={isReserving}
+                  className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Reserve (pay in person)
+                </button>
+                <button
+                  onClick={handleContactSeller}
+                  className="w-full bg-primary text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={20} />
+                  Contact Seller
+                </button>
+              </>
+            )}
+            {listing.status === 'reserved' && (
+              <>
+                <button
+                  onClick={handleCancelReservation}
+                  disabled={isReserving}
+                  className="w-full bg-white text-gray-900 font-bold py-3.5 rounded-xl border border-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Cancel reservation
+                </button>
+                <button
+                  onClick={handleContactSeller}
+                  className="w-full bg-primary text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={20} />
+                  Message seller about meetup
+                </button>
+              </>
+            )}
+            {listing.status === 'sold' && (
+              <button
+                disabled
+                className="w-full bg-gray-200 text-gray-500 font-bold py-3.5 rounded-xl cursor-not-allowed"
+              >
+                Listing sold
+              </button>
+            )}
           </div>
         </div>
       )}

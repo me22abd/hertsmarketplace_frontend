@@ -275,6 +275,14 @@ export const premiumAPI = {
   },
 };
 
+// Sellers API (public seller profile)
+export const sellersAPI = {
+  getProfile: async (sellerId: number) => {
+    const response = await api.get(`/sellers/${sellerId}/profile/`);
+    return response.data;
+  },
+};
+
 // Search API
 export const searchAPI = {
   search: async (query: string) => {
