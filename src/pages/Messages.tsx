@@ -164,112 +164,122 @@ export default function Messages() {
     );
   }
 
+  const showInbox = !activeChannel;
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="sticky top-0 bg-slate-50 z-10 pt-2">
-        <div className="w-full max-w-md mx-auto px-4 pb-3">
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Chat with sellers to arrange safe, in-person meetups.
-          </p>
-        </div>
-      </div>
+      <div className="w-full max-w-md mx-auto h-[calc(100vh-4.5rem)] flex flex-col">
+        {showInbox ? (
+          <div className="pt-3 px-4 pb-2">
+            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+            <p className="text-xs text-gray-500 mt-1">
+              Chat with sellers to arrange safe, in-person meetups.
+            </p>
+          </div>
+        ) : null}
 
-      <div className="w-full max-w-md mx-auto px-3">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <Chat client={client}>
-            <div className="flex flex-col h-[70vh]">
-              <div className="border-b border-gray-100">
-                <ChannelList
-                  filters={{ members: { $in: [String(user?.id)] } }}
-                  sort={{ last_message_at: -1 }}
-                  Preview={ChannelPreviewMessenger}
-                  EmptyStateIndicator={() => (
-                    <div className="flex flex-col items-center justify-center py-12 px-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
-                        <MessageCircle size={28} className="text-gray-400" />
-                      </div>
-                      <h2 className="text-base font-bold text-gray-900 mb-1">
-                        No messages yet
-                      </h2>
-                      <p className="text-xs text-gray-500 text-center mb-4">
-                        Start a conversation with a seller from any listing.
-                      </p>
-                      <button
-                        onClick={() => navigate('/home')}
-                        className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-colors"
-                      >
-                        Browse listings
-                      </button>
-                    </div>
-                  )}
-                />
-              </div>
-
-              <Channel channel={activeChannel}>
-                <Window>
-                  {activeChannel && (
-                    <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <button
-                          onClick={() => setActiveChannel(null)}
-                          className="touch-target -ml-2"
-                        >
-                          <ArrowLeft size={22} className="text-gray-900" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!otherUser}
-                          onClick={() => {
-                            if (!otherUser) return;
-                            navigate(`/seller/${otherUser.id}`);
-                          }}
-                          className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
-                            {otherUser?.image ? (
-                              <img
-                                src={otherUser.image}
-                                alt={otherUser.name || 'Profile'}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              otherUserInitials
-                            )}
+        <div className="flex-1 px-3">
+          <div className="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden h-full flex flex-col">
+            <Chat client={client}>
+              {showInbox ? (
+                <div className="flex-1 flex flex-col">
+                  <div className="border-b border-gray-100 bg-white">
+                    <ChannelList
+                      filters={{ members: { $in: [String(user?.id)] } }}
+                      sort={{ last_message_at: -1 }}
+                      Preview={ChannelPreviewMessenger}
+                      EmptyStateIndicator={() => (
+                        <div className="flex flex-col items-center justify-center py-12 px-4">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                            <MessageCircle size={28} className="text-gray-400" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h2 className="text-sm font-semibold text-gray-900 truncate">
-                              {otherUser?.name || otherUser?.email || 'Student'}
-                            </h2>
-                            {activeChannel?.data?.listing?.title && (
-                              <p className="text-[11px] text-gray-500 truncate">
-                                {activeChannel.data.listing.title}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-[11px] font-semibold text-primary">
-                            View profile
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                    <div className="flex flex-col flex-1 bg-slate-50">
-                    <div className="flex-1 px-1 pt-1">
-                      <MessageList />
-                    </div>
-
-                    <QuickReplies />
-
-                    <div className="border-t border-gray-100 bg-white px-2 pb-2">
-                      <MessageInput focus />
-                    </div>
+                          <h2 className="text-base font-bold text-gray-900 mb-1">
+                            No messages yet
+                          </h2>
+                          <p className="text-xs text-gray-500 text-center mb-4">
+                            Start a conversation with a seller from any listing.
+                          </p>
+                          <button
+                            onClick={() => navigate('/home')}
+                            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-colors"
+                          >
+                            Browse listings
+                          </button>
+                        </div>
+                      )}
+                      onSelect={(channel) => {
+                        setActiveChannel(channel);
+                      }}
+                    />
                   </div>
-                </Window>
-              </Channel>
-            </div>
-          </Chat>
+                </div>
+              ) : (
+                <Channel channel={activeChannel}>
+                  <Window>
+                    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-slate-100">
+                      <div className="bg-white/90 backdrop-blur border-b border-gray-100">
+                        <div className="px-4 py-3 flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setActiveChannel(null);
+                              navigate('/messages', { replace: true });
+                            }}
+                            className="touch-target -ml-2"
+                          >
+                            <ArrowLeft size={22} className="text-gray-900" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!otherUser}
+                            onClick={() => {
+                              if (!otherUser) return;
+                              navigate(`/seller/${otherUser.id}`);
+                            }}
+                            className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
+                          >
+                            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
+                              {otherUser?.image ? (
+                                <img
+                                  src={otherUser.image}
+                                  alt={otherUser.name || 'Profile'}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                otherUserInitials
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h2 className="text-sm font-semibold text-gray-900 truncate">
+                                {otherUser?.name || otherUser?.email || 'Student'}
+                              </h2>
+                              {activeChannel?.data?.listing?.title && (
+                                <p className="text-[11px] text-gray-500 truncate">
+                                  {activeChannel.data.listing.title}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-primary">
+                              View profile
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 px-1 pt-1">
+                        <MessageList />
+                      </div>
+
+                      <QuickReplies />
+
+                      <div className="border-t border-gray-100 bg-white px-2 pb-2">
+                        <MessageInput focus />
+                      </div>
+                    </div>
+                  </Window>
+                </Channel>
+              )}
+            </Chat>
+          </div>
         </div>
       </div>
 
