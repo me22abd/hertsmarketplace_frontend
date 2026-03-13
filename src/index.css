@@ -217,3 +217,27 @@
 .image-loading {
   @apply bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse;
 }
+
+/* Stream Chat overrides to match brand (purple + soft gray) */
+.str-chat__message-simple--me .str-chat__message-simple__text-inner {
+  background-color: #9a46cf; /* primary */
+  color: #ffffff;
+}
+
+.str-chat__message-simple--me .str-chat__message-simple__text-inner p {
+  color: inherit;
+}
+
+.str-chat__message-simple .str-chat__message-simple__text-inner {
+  border-radius: 18px;
+}
+
+.str-chat__message-simple--other .str-chat__message-simple__text-inner {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+}
+
+.str-chat__message-simple__actions {
+  display: none; /* hide extra action icons for a cleaner mobile look */
+}
