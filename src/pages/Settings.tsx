@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, Image, Type, ZoomIn, ZoomOut } from 'lucide-react';
 import { useSettingsStore, type ImageSize, type FontSize } from '@/store/settingsStore';
