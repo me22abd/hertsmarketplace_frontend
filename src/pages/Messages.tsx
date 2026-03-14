@@ -54,12 +54,13 @@ function QuickReplies() {
   );
 }
 
-function InboxPreview(props: any) {
-  const { channel, setActiveChannel } = props;
+function InboxPreview({ channel }: { channel: any }) {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const members = Object.values(channel.state?.members || {}) as any[];
-  const currentUserId = String(props.client?.userID || '');
-  const otherMember = members.find((m) => m.user?.id !== currentUserId) || members[0];
+  const currentUserId = String(user?.id || '');
+  const otherMember = members.find((m: any) => m.user?.id !== currentUserId) || members[0];
   const otherUser = otherMember?.user;
 
   const name: string =
@@ -78,10 +79,17 @@ function InboxPreview(props: any) {
     ? channel.state.messages[channel.state.messages.length - 1].text || ''
     : '';
 
+  const handleClick = () => {
+    const channelId = channel.id || channel.cid?.split(':')[1];
+    if (channelId) {
+      navigate(`/messages?channel=${channelId}`);
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => setActiveChannel?.(channel)}
+      onClick={handleClick}
       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-gray-50"
     >
       <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
@@ -255,9 +263,6 @@ export default function Messages() {
                           </button>
                         </div>
                       )}
-                      onSelect={(channel) => {
-                        setActiveChannel(channel);
-                      }}
                     />
                   </div>
                 </div>
