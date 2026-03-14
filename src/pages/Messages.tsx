@@ -15,7 +15,7 @@ import {
   useChannelStateContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
-import { streamAPI } from '@/services/api';
+import { streamAPI, profileAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
@@ -57,23 +57,52 @@ function QuickReplies() {
 function InboxPreview({ channel }: { channel: any }) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const members = Object.values(channel.state?.members || {}) as any[];
   const currentUserId = String(user?.id || '');
   const otherMember = members.find((m: any) => m.user?.id !== currentUserId) || members[0];
   const otherUser = otherMember?.user;
+  const otherUserId = otherUser?.id;
 
-  const name: string =
+  // Fetch profile from backend API
+  useEffect(() => {
+    if (!otherUserId) return;
+
+    const fetchProfile = async () => {
+      try {
+        const profile = await profileAPI.get(Number(otherUserId));
+        if (profile?.name) {
+          setProfileName(profile.name);
+        }
+        if (profile?.profile_photo || profile?.avatar_url) {
+          setProfileImage(profile.profile_photo || profile.avatar_url);
+        }
+      } catch (error) {
+        // If profile fetch fails, fall back to Stream data
+        console.warn('Failed to fetch profile for user', otherUserId, error);
+      }
+    };
+
+    fetchProfile();
+  }, [otherUserId]);
+
+  // Determine display name: prefer backend profile, then Stream name, then email, then fallback
+  const displayName: string =
+    profileName ||
     (otherUser?.name as string) ||
     (otherUser?.email as string) ||
     (otherUser?.id ? `Student ${otherUser.id}` : 'Student');
 
-  const initials = name
+  const initials = displayName
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase())
     .join('') || 'U';
+
+  const avatarImage = profileImage || otherUser?.image;
 
   const lastMessageText = channel.state?.messages?.length
     ? channel.state.messages[channel.state.messages.length - 1].text || ''
@@ -93,14 +122,14 @@ function InboxPreview({ channel }: { channel: any }) {
       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-gray-50"
     >
       <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
-        {otherUser?.image ? (
-          <img src={otherUser.image} alt={name} className="w-full h-full object-cover" />
+        {avatarImage ? (
+          <img src={avatarImage} alt={displayName} className="w-full h-full object-cover" />
         ) : (
           initials
         )}
       </div>
       <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
+        <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
         {lastMessageText ? (
           <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
         ) : (
@@ -175,6 +204,7 @@ export default function Messages() {
   };
 
   const currentUserId = user ? String(user.id) : null;
+  const [activeChatProfile, setActiveChatProfile] = useState<{ name?: string; image?: string } | null>(null);
 
   const otherUser = useMemo(() => {
     if (!activeChannel || !currentUserId) return null;
@@ -187,18 +217,42 @@ export default function Messages() {
     }
   }, [activeChannel, currentUserId]);
 
+  // Fetch profile for active chat's other user
+  useEffect(() => {
+    if (!otherUser?.id) {
+      setActiveChatProfile(null);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const profile = await profileAPI.get(Number(otherUser.id));
+        setActiveChatProfile({
+          name: profile?.name || undefined,
+          image: profile?.profile_photo || profile?.avatar_url || undefined,
+        });
+      } catch (error) {
+        console.warn('Failed to fetch profile for active chat user', otherUser.id, error);
+        setActiveChatProfile(null);
+      }
+    };
+
+    fetchProfile();
+  }, [otherUser?.id]);
+
+  const displayName = activeChatProfile?.name || otherUser?.name || otherUser?.email || 'Student';
+  const displayImage = activeChatProfile?.image || otherUser?.image;
+
   const otherUserInitials = useMemo(() => {
-    if (!otherUser) return 'U';
-    const name: string = otherUser.name || otherUser.email || '';
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
+    if (!displayName) return 'U';
+    const parts = displayName.trim().split(' ');
     const initials = parts
       .filter(Boolean)
       .slice(0, 2)
       .map((p) => p[0]?.toUpperCase())
       .join('');
     return initials || 'U';
-  }, [otherUser]);
+  }, [displayName]);
 
   if (isLoading && !client) {
     return <Loading fullScreen />;
@@ -291,10 +345,10 @@ export default function Messages() {
                             className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
                           >
                             <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
-                              {otherUser?.image ? (
+                              {displayImage ? (
                                 <img
-                                  src={otherUser.image}
-                                  alt={otherUser.name || 'Profile'}
+                                  src={displayImage}
+                                  alt={displayName}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -303,7 +357,7 @@ export default function Messages() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h2 className="text-sm font-semibold text-gray-900 truncate">
-                                {otherUser?.name || otherUser?.email || 'Student'}
+                                {displayName}
                               </h2>
                               {activeChannel?.data?.listing?.title && (
                                 <p className="text-[11px] text-gray-500 truncate">
