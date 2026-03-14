@@ -1,20 +1,23 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, Image, Type, ZoomIn, ZoomOut } from 'lucide-react';
-import { useSettingsStore, type ImageSize, type FontSize } from '@/store/settingsStore';
+import { ArrowLeft, Moon, Sun, Image, Type, ZoomIn, ZoomOut, Monitor } from 'lucide-react';
+import { useSettingsStore, type ImageSize, type FontSize, type DarkModePreference } from '@/store/settingsStore';
 import BottomNav from '@/components/BottomNav';
 
 export default function Settings() {
   const navigate = useNavigate();
   const {
-    darkMode,
+    darkModePreference,
     imageSize,
     fontSize,
     zoomLevel,
-    toggleDarkMode,
+    setDarkModePreference,
     setImageSize,
     setFontSize,
     setZoomLevel,
+    getDarkMode,
   } = useSettingsStore();
+
+  const currentDarkMode = getDarkMode();
 
   // Settings are applied globally in App.tsx, no need to apply here
 
@@ -51,35 +54,44 @@ export default function Settings() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Appearance</h2>
           
-          {/* Dark Mode Toggle */}
+          {/* Dark Mode Preference */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {darkMode ? (
+            <div className="mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                {currentDarkMode ? (
                   <Moon size={20} className="text-gray-600 dark:text-gray-400" />
                 ) : (
                   <Sun size={20} className="text-gray-600 dark:text-gray-400" />
                 )}
                 <div>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">Dark Mode</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-white">Appearance</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Switch between light and dark theme
+                    {darkModePreference === 'system' 
+                      ? `Following system (${currentDarkMode ? 'Dark' : 'Light'})`
+                      : darkModePreference === 'dark'
+                      ? 'Dark mode'
+                      : 'Light mode'}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={toggleDarkMode}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  darkMode ? 'bg-primary' : 'bg-gray-300'
-                }`}
-                aria-label="Toggle dark mode"
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    darkMode ? 'translate-x-6' : 'translate-x-1'
+            </div>
+            <div className="flex gap-2">
+              {(['system', 'light', 'dark'] as DarkModePreference[]).map((pref) => (
+                <button
+                  key={pref}
+                  onClick={() => setDarkModePreference(pref)}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    darkModePreference === pref
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
-                />
-              </button>
+                >
+                  {pref === 'system' && <Monitor size={16} />}
+                  {pref === 'light' && <Sun size={16} />}
+                  {pref === 'dark' && <Moon size={16} />}
+                  {pref === 'system' ? 'System' : pref === 'light' ? 'Light' : 'Dark'}
+                </button>
+              ))}
             </div>
           </div>
 

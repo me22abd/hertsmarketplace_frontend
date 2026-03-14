@@ -31,20 +31,43 @@ import Settings from '@/pages/Settings';
 
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuthStore();
-  const { darkMode, zoomLevel } = useSettingsStore();
+  const { darkModePreference, zoomLevel, getDarkMode } = useSettingsStore();
 
   useEffect(() => {
     loadUser();
   }, []);
 
-  // Apply dark mode globally on mount and when it changes
+  // Apply dark mode globally based on preference (system/light/dark)
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const applyDarkMode = () => {
+      const isDark = getDarkMode();
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    // Apply immediately
+    applyDarkMode();
+
+    // Listen for system preference changes if using 'system' mode
+    if (darkModePreference === 'system' && typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyDarkMode();
+      
+      // Modern browsers
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+      }
+      // Fallback for older browsers
+      else if (mediaQuery.addListener) {
+        mediaQuery.addListener(handleChange);
+        return () => mediaQuery.removeListener(handleChange);
+      }
     }
-  }, [darkMode]);
+  }, [darkModePreference, getDarkMode]);
 
   // Apply zoom level globally on mount and when it changes
   useEffect(() => {
