@@ -66,7 +66,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [roleLabel, setRoleLabel] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
-  const [showActions, setShowActions] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -189,7 +188,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
       const maxSwipe = 200; // Max swipe distance
       const newOffset = Math.max(-maxSwipe, Math.min(0, deltaX));
       setSwipeOffset(newOffset);
-      setShowActions(newOffset < -50);
     }
   };
 
@@ -197,11 +195,9 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
     if (swipeOffset < -100) {
       // Swiped enough, show actions
       setSwipeOffset(-200);
-      setShowActions(true);
     } else {
       // Not enough swipe, snap back
       setSwipeOffset(0);
-      setShowActions(false);
     }
     touchStartX.current = null;
     touchStartY.current = null;
@@ -214,7 +210,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
         await channel.delete();
         onDelete?.(channel);
         setSwipeOffset(0);
-        setShowActions(false);
       } catch (error) {
         console.error('Failed to delete channel', error);
         alert('Failed to delete conversation. Please try again.');
@@ -229,7 +224,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
       await channel.removeMembers([String(user?.id)]);
       onHide?.(channel);
       setSwipeOffset(0);
-      setShowActions(false);
     } catch (error) {
       console.error('Failed to hide channel', error);
       alert('Failed to hide conversation. Please try again.');
@@ -243,7 +237,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
       await channel.updatePartial({ archived: true, archived_at: new Date().toISOString() });
       onArchive?.(channel);
       setSwipeOffset(0);
-      setShowActions(false);
     } catch (error) {
       console.error('Failed to archive channel', error);
       alert('Failed to archive conversation. Please try again.');
@@ -577,9 +570,7 @@ export default function Messages() {
                   <div className="border-b border-gray-100 bg-white">
                     <ChannelList
                       filters={{ 
-                        members: { $in: [String(user?.id)] },
-                        // Exclude archived channels
-                        archived: { $ne: true }
+                        members: { $in: [String(user?.id)] }
                       }}
                       sort={{ last_message_at: -1 }}
                       Preview={(props: any) => (
