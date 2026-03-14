@@ -15,7 +15,7 @@ import {
   useChannelStateContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
-import { streamAPI, profileAPI } from '@/services/api';
+import { streamAPI, profileAPI, listingsAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
@@ -59,6 +59,7 @@ function InboxPreview({ channel }: { channel: any }) {
   const { user } = useAuthStore();
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [roleLabel, setRoleLabel] = useState<string | null>(null);
 
   const members = Object.values(channel.state?.members || {}) as any[];
   const currentUserId = String(user?.id || '');
@@ -66,18 +67,45 @@ function InboxPreview({ channel }: { channel: any }) {
   const otherUser = otherMember?.user;
   const otherUserId = otherUser?.id;
 
-  // Fetch profile from backend API
+  // Fetch profile and determine role from backend API
   useEffect(() => {
     if (!otherUserId) return;
 
-    const fetchProfile = async () => {
+    const fetchProfileAndRole = async () => {
       try {
-        const profile = await profileAPI.get(Number(otherUserId));
-        if (profile?.name) {
-          setProfileName(profile.name);
-        }
-        if (profile?.profile_photo || profile?.avatar_url) {
-          setProfileImage(profile.profile_photo || profile.avatar_url);
+        // Extract listing ID from channel ID (format: listing_<listing_id>_<id1>_<id2>)
+        const channelId = channel.id || channel.cid?.split(':')[1] || '';
+        const listingIdMatch = channelId.match(/listing_(\d+)_/);
+        
+        if (listingIdMatch) {
+          const listingId = parseInt(listingIdMatch[1], 10);
+          
+          // Fetch listing to determine seller
+          const listing = await listingsAPI.get(listingId);
+          const sellerId = String(listing.seller?.id || listing.seller);
+          const isCurrentUserSeller = sellerId === currentUserId;
+          
+          // Fetch profile
+          const profile = await profileAPI.get(Number(otherUserId));
+          
+          if (profile?.name) {
+            setProfileName(profile.name);
+          }
+          if (profile?.profile_photo || profile?.avatar_url) {
+            setProfileImage(profile.profile_photo || profile.avatar_url);
+          }
+          
+          // Set role label
+          setRoleLabel(isCurrentUserSeller ? 'Buyer' : 'Seller');
+        } else {
+          // Fallback: just fetch profile without role
+          const profile = await profileAPI.get(Number(otherUserId));
+          if (profile?.name) {
+            setProfileName(profile.name);
+          }
+          if (profile?.profile_photo || profile?.avatar_url) {
+            setProfileImage(profile.profile_photo || profile.avatar_url);
+          }
         }
       } catch (error) {
         // If profile fetch fails, fall back to Stream data
@@ -85,8 +113,8 @@ function InboxPreview({ channel }: { channel: any }) {
       }
     };
 
-    fetchProfile();
-  }, [otherUserId]);
+    fetchProfileAndRole();
+  }, [otherUserId, channel, currentUserId]);
 
   // Determine display name: prefer backend profile, then Stream name, then email, then fallback
   const displayName: string =
@@ -129,7 +157,14 @@ function InboxPreview({ channel }: { channel: any }) {
         )}
       </div>
       <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+          {roleLabel && (
+            <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
+              {roleLabel}
+            </span>
+          )}
+        </div>
         {lastMessageText ? (
           <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
         ) : (
@@ -204,7 +239,7 @@ export default function Messages() {
   };
 
   const currentUserId = user ? String(user.id) : null;
-  const [activeChatProfile, setActiveChatProfile] = useState<{ name?: string; image?: string } | null>(null);
+  const [activeChatProfile, setActiveChatProfile] = useState<{ name?: string; image?: string; role?: 'seller' | 'buyer' } | null>(null);
 
   const otherUser = useMemo(() => {
     if (!activeChannel || !currentUserId) return null;
@@ -217,31 +252,64 @@ export default function Messages() {
     }
   }, [activeChannel, currentUserId]);
 
-  // Fetch profile for active chat's other user
+  // Determine if current user is seller or buyer, and fetch profile
   useEffect(() => {
-    if (!otherUser?.id) {
+    if (!otherUser?.id || !activeChannel || !currentUserId) {
       setActiveChatProfile(null);
       return;
     }
 
-    const fetchProfile = async () => {
+    const fetchListingAndProfile = async () => {
       try {
-        const profile = await profileAPI.get(Number(otherUser.id));
-        setActiveChatProfile({
-          name: profile?.name || undefined,
-          image: profile?.profile_photo || profile?.avatar_url || undefined,
-        });
+        // Extract listing ID from channel ID (format: listing_<listing_id>_<id1>_<id2>)
+        const channelId = activeChannel.id || activeChannel.cid?.split(':')[1] || '';
+        const listingIdMatch = channelId.match(/listing_(\d+)_/);
+        
+        if (listingIdMatch) {
+          const listingId = parseInt(listingIdMatch[1], 10);
+          
+          // Fetch listing to determine seller
+          const listing = await listingsAPI.get(listingId);
+          const sellerId = String(listing.seller?.id || listing.seller);
+          const isCurrentUserSeller = sellerId === currentUserId;
+          
+          // Fetch the other user's profile
+          const profile = await profileAPI.get(Number(otherUser.id));
+          
+          setActiveChatProfile({
+            name: profile?.name || undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+            role: isCurrentUserSeller ? 'buyer' : 'seller', // Other user's role
+          });
+        } else {
+          // Fallback: just fetch profile without role
+          const profile = await profileAPI.get(Number(otherUser.id));
+          setActiveChatProfile({
+            name: profile?.name || undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+          });
+        }
       } catch (error) {
-        console.warn('Failed to fetch profile for active chat user', otherUser.id, error);
-        setActiveChatProfile(null);
+        console.warn('Failed to fetch listing/profile for active chat', error);
+        // Fallback: try to get profile without listing
+        try {
+          const profile = await profileAPI.get(Number(otherUser.id));
+          setActiveChatProfile({
+            name: profile?.name || undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+          });
+        } catch (profileError) {
+          setActiveChatProfile(null);
+        }
       }
     };
 
-    fetchProfile();
-  }, [otherUser?.id]);
+    fetchListingAndProfile();
+  }, [otherUser?.id, activeChannel, currentUserId]);
 
   const displayName = activeChatProfile?.name || otherUser?.name || otherUser?.email || 'Student';
   const displayImage = activeChatProfile?.image || otherUser?.image;
+  const roleLabel = activeChatProfile?.role === 'seller' ? 'Seller' : activeChatProfile?.role === 'buyer' ? 'Buyer' : null;
 
   const otherUserInitials = useMemo(() => {
     if (!displayName) return 'U';
@@ -356,9 +424,16 @@ export default function Messages() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h2 className="text-sm font-semibold text-gray-900 truncate">
-                                {displayName}
-                              </h2>
+                              <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-semibold text-gray-900 truncate">
+                                  {displayName}
+                                </h2>
+                                {roleLabel && (
+                                  <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                    {roleLabel}
+                                  </span>
+                                )}
+                              </div>
                               {activeChannel?.data?.listing?.title && (
                                 <p className="text-[11px] text-gray-500 truncate">
                                   {activeChannel.data.listing.title}
