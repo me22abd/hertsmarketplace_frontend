@@ -399,6 +399,7 @@ export default function Messages() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
+  const { darkMode } = useSettingsStore();
   const [client, setClient] = useState<any>(null);
   const [activeChannel, setActiveChannel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -570,7 +571,6 @@ export default function Messages() {
   }
 
   const showInbox = !activeChannel;
-  const { darkMode } = useSettingsStore();
 
   return (
     <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
