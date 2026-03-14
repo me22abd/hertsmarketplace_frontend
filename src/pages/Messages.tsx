@@ -2,9 +2,9 @@
  * Messages page using Stream Chat
  * Premium-style header showing other user's profile + listing
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, Archive, EyeOff, MoreVertical } from 'lucide-react';
 import {
   Chat,
   Channel,
@@ -54,12 +54,23 @@ function QuickReplies() {
   );
 }
 
-function InboxPreview({ channel }: { channel: any }) {
+function InboxPreview({ channel, onDelete, onHide, onArchive }: { 
+  channel: any; 
+  onDelete?: (channel: any) => void;
+  onHide?: (channel: any) => void;
+  onArchive?: (channel: any) => void;
+}) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [roleLabel, setRoleLabel] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showActions, setShowActions] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const members = Object.values(channel.state?.members || {}) as any[];
   const currentUserId = String(user?.id || '');
@@ -149,41 +160,223 @@ function InboxPreview({ channel }: { channel: any }) {
     : '';
 
   const handleClick = () => {
+    if (swipeOffset !== 0) {
+      // If swiped, don't navigate
+      setSwipeOffset(0);
+      setShowActions(false);
+      return;
+    }
     const channelId = channel.id || channel.cid?.split(':')[1];
     if (channelId) {
       navigate(`/messages?channel=${channelId}`);
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    
+    // Only allow horizontal swipe (not vertical scrolling)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault();
+      const maxSwipe = 200; // Max swipe distance
+      const newOffset = Math.max(-maxSwipe, Math.min(0, deltaX));
+      setSwipeOffset(newOffset);
+      setShowActions(newOffset < -50);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeOffset < -100) {
+      // Swiped enough, show actions
+      setSwipeOffset(-200);
+      setShowActions(true);
+    } else {
+      // Not enough swipe, snap back
+      setSwipeOffset(0);
+      setShowActions(false);
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this conversation? This cannot be undone.')) {
+      try {
+        await channel.delete();
+        onDelete?.(channel);
+        setSwipeOffset(0);
+        setShowActions(false);
+      } catch (error) {
+        console.error('Failed to delete channel', error);
+        alert('Failed to delete conversation. Please try again.');
+      }
+    }
+  };
+
+  const handleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Hide channel by removing user from it (Stream Chat way)
+      await channel.removeMembers([String(user?.id)]);
+      onHide?.(channel);
+      setSwipeOffset(0);
+      setShowActions(false);
+    } catch (error) {
+      console.error('Failed to hide channel', error);
+      alert('Failed to hide conversation. Please try again.');
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Archive by updating channel data
+      await channel.updatePartial({ archived: true, archived_at: new Date().toISOString() });
+      onArchive?.(channel);
+      setSwipeOffset(0);
+      setShowActions(false);
+    } catch (error) {
+      console.error('Failed to archive channel', error);
+      alert('Failed to archive conversation. Please try again.');
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-gray-50"
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden border-b border-gray-50"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
-        {avatarImage ? (
-          <img src={avatarImage} alt={displayName} className="w-full h-full object-cover" />
-        ) : (
-          initials
-        )}
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
-          {roleLabel && (
-            <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
-              {roleLabel}
-            </span>
-          )}
+      {/* Action buttons (shown when swiped) */}
+      <div className="absolute right-0 top-0 h-full flex items-center bg-red-500">
+        <div className="flex items-center h-full">
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="h-full px-6 bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+            aria-label="Delete"
+          >
+            <Trash2 size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={handleHide}
+            className="h-full px-6 bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+            aria-label="Hide"
+          >
+            <EyeOff size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={handleArchive}
+            className="h-full px-6 bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors"
+            aria-label="Archive"
+          >
+            <Archive size={20} />
+          </button>
         </div>
-        {lastMessageText ? (
-          <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
-        ) : (
-          <p className="text-[11px] text-gray-400 truncate">No messages yet</p>
+      </div>
+
+      {/* Main chat item */}
+      <div
+        className="relative bg-white flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-all duration-200"
+        style={{ transform: `translateX(${swipeOffset}px)` }}
+      >
+        <button
+          type="button"
+          onClick={handleClick}
+          className="flex-1 flex items-center gap-3 text-left"
+        >
+          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
+            {avatarImage ? (
+              <img src={avatarImage} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+              {roleLabel && (
+                <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
+                  {roleLabel}
+                </span>
+              )}
+            </div>
+            {lastMessageText ? (
+              <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
+            ) : (
+              <p className="text-[11px] text-gray-400 truncate">No messages yet</p>
+            )}
+          </div>
+        </button>
+
+        {/* More options menu button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="More options"
+        >
+          <MoreVertical size={18} className="text-gray-500" />
+        </button>
+
+        {/* Dropdown menu */}
+        {showMenu && (
+          <div className="absolute right-2 top-12 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={handleHide}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <EyeOff size={16} />
+              Hide
+            </button>
+            <button
+              type="button"
+              onClick={handleArchive}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Archive size={16} />
+              Archive
+            </button>
+          </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -383,9 +576,29 @@ export default function Messages() {
                 <div className="flex-1 flex flex-col">
                   <div className="border-b border-gray-100 bg-white">
                     <ChannelList
-                      filters={{ members: { $in: [String(user?.id)] } }}
+                      filters={{ 
+                        members: { $in: [String(user?.id)] },
+                        // Exclude archived channels
+                        archived: { $ne: true }
+                      }}
                       sort={{ last_message_at: -1 }}
-                      Preview={InboxPreview}
+                      Preview={(props: any) => (
+                        <InboxPreview
+                          {...props}
+                          onDelete={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel deleted', ch);
+                          }}
+                          onHide={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel hidden', ch);
+                          }}
+                          onArchive={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel archived', ch);
+                          }}
+                        />
+                      )}
                       EmptyStateIndicator={() => (
                         <div className="flex flex-col items-center justify-center py-12 px-4">
                           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
