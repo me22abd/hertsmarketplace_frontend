@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2 } from 'lucide-react';
+import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2, Settings } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI, listingsAPI, savedListingsAPI, messagesAPI, premiumAPI } from '@/services/api';
 import BottomNav from '@/components/BottomNav';
@@ -339,6 +339,18 @@ export default function Profile() {
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Settings</h3>
           </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <Settings size={20} className="text-gray-700" />
+              </div>
+              <span className="font-medium text-gray-900">Appearance & Settings</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
           <button
             onClick={() => navigate('/notifications')}
             className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"

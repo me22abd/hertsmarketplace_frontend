@@ -26,6 +26,7 @@ import MyListings from '@/pages/MyListings';
 import SellerProfile from '@/pages/SellerProfile';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
+import Settings from '@/pages/Settings';
 
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuthStore();
@@ -193,6 +194,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Notifications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

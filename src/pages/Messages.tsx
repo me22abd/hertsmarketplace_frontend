@@ -17,6 +17,7 @@ import {
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
 import { streamAPI, profileAPI, listingsAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
 import type { Listing } from '@/types';
@@ -62,6 +63,7 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
 }) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { imageSize, fontSize } = useSettingsStore();
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [roleLabel, setRoleLabel] = useState<string | null>(null);
@@ -162,7 +164,6 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
     if (swipeOffset !== 0) {
       // If swiped, don't navigate
       setSwipeOffset(0);
-      setShowActions(false);
       return;
     }
     const channelId = channel.id || channel.cid?.split(':')[1];
@@ -302,7 +303,11 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
           onClick={handleClick}
           className="flex-1 flex items-center gap-3 text-left"
         >
-          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold overflow-hidden">
+          <div className={`rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold overflow-hidden ${
+            imageSize === 'small' ? 'w-10 h-10 text-xs' :
+            imageSize === 'large' ? 'w-14 h-14 text-base' :
+            'w-12 h-12 text-sm'
+          }`}>
             {avatarImage ? (
               <img src={avatarImage} alt={displayName} className="w-full h-full object-cover" />
             ) : (
@@ -311,17 +316,33 @@ function InboxPreview({ channel, onDelete, onHide, onArchive }: {
           </div>
           <div className="flex-1 min-w-0 text-left">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+              <p className={`font-semibold text-gray-900 dark:text-white truncate ${
+                fontSize === 'small' ? 'text-sm' :
+                fontSize === 'large' ? 'text-lg' :
+                'text-base'
+              }`}>{displayName}</p>
               {roleLabel && (
-                <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
+                <span className={`font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded whitespace-nowrap ${
+                  fontSize === 'small' ? 'text-[9px]' :
+                  fontSize === 'large' ? 'text-xs' :
+                  'text-[10px]'
+                }`}>
                   {roleLabel}
                 </span>
               )}
             </div>
             {lastMessageText ? (
-              <p className="text-[11px] text-gray-500 truncate">{lastMessageText}</p>
+              <p className={`text-gray-500 dark:text-gray-400 truncate ${
+                fontSize === 'small' ? 'text-[10px]' :
+                fontSize === 'large' ? 'text-sm' :
+                'text-[11px]'
+              }`}>{lastMessageText}</p>
             ) : (
-              <p className="text-[11px] text-gray-400 truncate">No messages yet</p>
+              <p className={`text-gray-400 dark:text-gray-500 truncate ${
+                fontSize === 'small' ? 'text-[10px]' :
+                fontSize === 'large' ? 'text-sm' :
+                'text-[11px]'
+              }`}>No messages yet</p>
             )}
           </div>
         </button>
@@ -549,9 +570,10 @@ export default function Messages() {
   }
 
   const showInbox = !activeChannel;
+  const { darkMode } = useSettingsStore();
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
       <div className="w-full max-w-md mx-auto h-[calc(100vh-4.5rem)] flex flex-col">
         {showInbox ? (
           <div className="pt-3 px-4 pb-2">
