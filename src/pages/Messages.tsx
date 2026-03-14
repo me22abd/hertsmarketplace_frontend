@@ -88,9 +88,15 @@ function InboxPreview({ channel }: { channel: any }) {
           // Fetch profile
           const profile = await profileAPI.get(Number(otherUserId));
           
-          if (profile?.name) {
-            setProfileName(profile.name);
+          // Only use profile name if it's a non-empty string (not placeholder)
+          const profileNameValue = profile?.name?.trim();
+          if (profileNameValue && profileNameValue.length > 0) {
+            setProfileName(profileNameValue);
+          } else {
+            // If no profile name, use email from Stream Chat user object
+            setProfileName(null); // Will fall back to email in displayName logic
           }
+          
           if (profile?.profile_photo || profile?.avatar_url) {
             setProfileImage(profile.profile_photo || profile.avatar_url);
           }
@@ -100,9 +106,15 @@ function InboxPreview({ channel }: { channel: any }) {
         } else {
           // Fallback: just fetch profile without role
           const profile = await profileAPI.get(Number(otherUserId));
-          if (profile?.name) {
-            setProfileName(profile.name);
+          
+          // Only use profile name if it's a non-empty string
+          const profileNameValue = profile?.name?.trim();
+          if (profileNameValue && profileNameValue.length > 0) {
+            setProfileName(profileNameValue);
+          } else {
+            setProfileName(null); // Will fall back to email
           }
+          
           if (profile?.profile_photo || profile?.avatar_url) {
             setProfileImage(profile.profile_photo || profile.avatar_url);
           }
@@ -116,10 +128,10 @@ function InboxPreview({ channel }: { channel: any }) {
     fetchProfileAndRole();
   }, [otherUserId, channel, currentUserId]);
 
-  // Determine display name: prefer backend profile, then Stream name, then email, then fallback
+  // Determine display name: prefer backend profile name (if real), then email, then fallback
+  // Skip Stream's otherUser.name as it might be placeholder like "John Doe"
   const displayName: string =
     profileName ||
-    (otherUser?.name as string) ||
     (otherUser?.email as string) ||
     (otherUser?.id ? `Student ${otherUser.id}` : 'Student');
 
@@ -276,16 +288,21 @@ export default function Messages() {
           // Fetch the other user's profile
           const profile = await profileAPI.get(Number(otherUser.id));
           
+          // Only use profile name if it's a non-empty string (not placeholder)
+          const profileNameValue = profile?.name?.trim();
+          
           setActiveChatProfile({
-            name: profile?.name || undefined,
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
             image: profile?.profile_photo || profile?.avatar_url || undefined,
             role: isCurrentUserSeller ? 'buyer' : 'seller', // Other user's role
           });
         } else {
           // Fallback: just fetch profile without role
           const profile = await profileAPI.get(Number(otherUser.id));
+          const profileNameValue = profile?.name?.trim();
+          
           setActiveChatProfile({
-            name: profile?.name || undefined,
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
             image: profile?.profile_photo || profile?.avatar_url || undefined,
           });
         }
@@ -294,8 +311,10 @@ export default function Messages() {
         // Fallback: try to get profile without listing
         try {
           const profile = await profileAPI.get(Number(otherUser.id));
+          const profileNameValue = profile?.name?.trim();
+          
           setActiveChatProfile({
-            name: profile?.name || undefined,
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
             image: profile?.profile_photo || profile?.avatar_url || undefined,
           });
         } catch (profileError) {
@@ -307,7 +326,8 @@ export default function Messages() {
     fetchListingAndProfile();
   }, [otherUser?.id, activeChannel, currentUserId]);
 
-  const displayName = activeChatProfile?.name || otherUser?.name || otherUser?.email || 'Student';
+  // Use profile name if available, otherwise use email (skip Stream's name as it might be placeholder)
+  const displayName = activeChatProfile?.name || otherUser?.email || 'Student';
   const displayImage = activeChatProfile?.image || otherUser?.image;
   const roleLabel = activeChatProfile?.role === 'seller' ? 'Seller' : activeChatProfile?.role === 'buyer' ? 'Buyer' : null;
 
