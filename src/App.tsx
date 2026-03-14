@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Loading from '@/components/Loading';
 
@@ -30,10 +31,29 @@ import Settings from '@/pages/Settings';
 
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuthStore();
+  const { darkMode, zoomLevel } = useSettingsStore();
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  // Apply dark mode globally on mount and when it changes
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Apply zoom level globally on mount and when it changes
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${zoomLevel * 16}px`;
+    return () => {
+      // Reset on unmount (optional)
+      document.documentElement.style.fontSize = '';
+    };
+  }, [zoomLevel]);
 
   if (isLoading) {
     return <Loading fullScreen />;

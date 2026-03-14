@@ -17,19 +17,7 @@ export default function Settings() {
     setZoomLevel,
   } = useSettingsStore();
 
-  // Apply dark mode to document
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
-  // Apply zoom level to document
-  useEffect(() => {
-    document.documentElement.style.fontSize = `${zoomLevel * 16}px`;
-  }, [zoomLevel]);
+  // Settings are applied globally in App.tsx, no need to apply here
 
   const imageSizeOptions: { value: ImageSize; label: string }[] = [
     { value: 'small', label: 'Small' },

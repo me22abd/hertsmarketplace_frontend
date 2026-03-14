@@ -577,19 +577,19 @@ export default function Messages() {
       <div className="w-full max-w-md mx-auto h-[calc(100vh-4.5rem)] flex flex-col">
         {showInbox ? (
           <div className="pt-3 px-4 pb-2">
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-            <p className="text-xs text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Chat with sellers to arrange safe, in-person meetups.
             </p>
           </div>
         ) : null}
 
         <div className="flex-1 px-3">
-          <div className="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden h-full flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
             <Chat client={client}>
               {showInbox ? (
                 <div className="flex-1 flex flex-col">
-                  <div className="border-b border-gray-100 bg-white">
+                  <div className="border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                     <ChannelList
                       filters={{ 
                         members: { $in: [String(user?.id)] }
@@ -614,13 +614,13 @@ export default function Messages() {
                       )}
                       EmptyStateIndicator={() => (
                         <div className="flex flex-col items-center justify-center py-12 px-4">
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
-                            <MessageCircle size={28} className="text-gray-400" />
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
+                            <MessageCircle size={28} className="text-gray-400 dark:text-gray-500" />
                           </div>
-                          <h2 className="text-base font-bold text-gray-900 mb-1">
+                          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">
                             No messages yet
                           </h2>
-                          <p className="text-xs text-gray-500 text-center mb-4">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
                             Start a conversation with a seller from any listing.
                           </p>
                           <button
@@ -637,8 +637,8 @@ export default function Messages() {
               ) : (
                 <Channel channel={activeChannel}>
                   <Window>
-                    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-slate-100">
-                      <div className="bg-white/90 backdrop-blur border-b border-gray-100">
+                    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-900">
+                      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-100 dark:border-gray-700">
                         <div className="px-4 py-3 flex items-center gap-3">
                           <button
                             onClick={() => {
