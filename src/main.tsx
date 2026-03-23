@@ -18,7 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {/* App shell centers content, caps width, and respects iOS safe areas */}
     <div className="w-full max-w-md flex-1 safe-area-top safe-area-bottom">
-      <App />
+    <App />
     </div>
   </React.StrictMode>
 );

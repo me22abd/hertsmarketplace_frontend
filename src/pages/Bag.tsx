@@ -60,27 +60,27 @@ export default function Bag() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
+      <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div className="w-full max-w-md mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">My Bag</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Bag</h1>
         </div>
       </div>
 
       <div className="w-full max-w-md mx-auto px-4 py-4">
         {bagItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-              <ShoppingBag size={32} className="text-gray-400" />
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-900">
+              <ShoppingBag size={32} className="text-gray-400 dark:text-gray-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Your bag is empty</h2>
-            <p className="text-gray-500 mb-6">
+            <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">Your bag is empty</h2>
+            <p className="mb-6 text-gray-500 dark:text-gray-400">
               Add items to your bag to purchase later
             </p>
             <Link
               to="/home"
-              className="inline-block px-6 py-3 bg-primary text-white font-semibold rounded-xl"
+              className="inline-block rounded-xl bg-primary px-6 py-3 font-semibold text-white"
             >
               Start Shopping
             </Link>
@@ -92,13 +92,13 @@ export default function Bag() {
               {bagItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                  className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-card dark:border-gray-800 dark:bg-gray-900"
                 >
                   <div className="flex gap-3 p-3">
                     {/* Item Image */}
                     <div
                       onClick={() => navigate(`/listing/${item.listing.id}`)}
-                      className="w-24 h-24 rounded-xl bg-gray-50 flex-shrink-0 overflow-hidden cursor-pointer"
+                      className="h-24 w-24 cursor-pointer flex-shrink-0 overflow-hidden rounded-2xl bg-gray-50 dark:bg-gray-800"
                     >
                       {item.listing.image ? (
                         <img
@@ -107,7 +107,7 @@ export default function Bag() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl">
+                        <div className="flex h-full w-full items-center justify-center text-3xl">
                           📦
                         </div>
                       )}
@@ -119,12 +119,12 @@ export default function Bag() {
                         <div className="flex-1 min-w-0 pr-2">
                           <h3
                             onClick={() => navigate(`/listing/${item.listing.id}`)}
-                            className="font-semibold text-gray-900 text-sm truncate cursor-pointer hover:text-primary"
+                            className="cursor-pointer truncate text-sm font-semibold text-gray-900 hover:text-primary dark:text-white"
                           >
                             {item.listing.title}
                           </h3>
                           {item.listing.seller?.profile?.name && (
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                               Seller: {item.listing.seller.profile.name}
                             </p>
                           )}
@@ -133,7 +133,7 @@ export default function Bag() {
                           onClick={() => handleRemoveItem(item.listing.id)}
                           className="touch-target -mr-2"
                         >
-                          <Trash2 size={18} className="text-gray-400 hover:text-red-600" />
+                          <Trash2 size={18} className="text-gray-400 hover:text-red-600 dark:text-gray-500" />
                         </button>
                       </div>
 
@@ -145,10 +145,10 @@ export default function Bag() {
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                               item.listing.status === 'available'
-                                ? 'bg-green-100 text-green-800'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
                                 : item.listing.status === 'reserved'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-800'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'
                             }`}
                           >
                             {item.listing.status === 'available'
@@ -163,7 +163,7 @@ export default function Bag() {
                       {item.listing.status === 'available' && (
                         <button
                           onClick={() => handleContactSeller(item)}
-                          className="mt-2 w-full bg-gray-900 text-white text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-800"
+                          className="mt-2 w-full rounded-lg bg-gray-900 py-2 text-xs font-semibold text-white flex items-center justify-center gap-1.5 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                         >
                           <MessageCircle size={14} />
                           Contact Seller
@@ -176,22 +176,22 @@ export default function Bag() {
             </div>
 
             {/* Summary Card */}
-            <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+            <div className="mb-4 rounded-3xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-gray-600 dark:text-gray-300">Subtotal</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {formatPrice(totalAmount)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Total items</span>
-                  <span className="font-semibold text-gray-900">{bagItems.length}</span>
+                  <span className="text-gray-600 dark:text-gray-300">Total items</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{bagItems.length}</span>
                 </div>
               </div>
-              <div className="pt-3 border-t border-gray-200">
+              <div className="border-t border-gray-200 pt-3 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-base font-bold text-gray-900">Total amount</span>
+                  <span className="text-base font-bold text-gray-900 dark:text-white">Total amount</span>
                   <span className="text-xl font-bold text-primary">
                     {formatPrice(totalAmount)}
                   </span>
@@ -200,9 +200,9 @@ export default function Bag() {
             </div>
 
             {/* Payment Info Card */}
-            <div className="bg-primary/5 rounded-2xl p-4 mb-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-2">💰 Payment Methods</h3>
-              <ul className="space-y-1.5 text-xs text-gray-600">
+            <div className="mb-4 rounded-3xl bg-primary/5 p-4">
+              <h3 className="mb-2 text-sm font-bold text-gray-900 dark:text-white">💰 Payment Methods</h3>
+              <ul className="space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
                 <li className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                   <span>Cash on delivery (after receiving item)</span>
@@ -219,8 +219,8 @@ export default function Bag() {
             </div>
 
             {/* Info Message */}
-            <div className="bg-blue-50 rounded-xl p-4 mb-4">
-              <p className="text-xs text-blue-900">
+            <div className="mb-4 rounded-2xl bg-blue-50 p-4 dark:bg-blue-900/20">
+              <p className="text-xs text-blue-900 dark:text-blue-200">
                 <span className="font-semibold">ℹ️ Note:</span> Contact each seller to arrange
                 pickup and payment. All items are from individual student sellers.
               </p>
@@ -248,7 +248,7 @@ export default function Bag() {
                 toast.success('Go to Messages to arrange collection with sellers');
               }}
               disabled={bagItems.length === 0}
-              className="w-full bg-primary text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-primary py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Contact All Sellers
             </button>

@@ -13,7 +13,7 @@
   }
 
   body {
-    @apply bg-bg font-sans antialiased;
+    @apply bg-bg dark:bg-gray-900 font-sans antialiased;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -194,6 +194,17 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Dark mode support for Stream Chat */
+  .dark .str-chat__message-simple__text-inner {
+    background-color: #9A46CF !important;
+    color: white !important;
+  }
+  .dark .str-chat__message-simple__text-inner--left {
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+    border: 1px solid #374151 !important;
   }
 }
 

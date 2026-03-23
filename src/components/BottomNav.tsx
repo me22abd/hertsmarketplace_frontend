@@ -13,7 +13,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-bottom z-50">
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white safe-area-bottom z-50 dark:border-gray-800 dark:bg-gray-950">
       <div className="max-w-md mx-auto flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -24,7 +24,9 @@ export default function BottomNav() {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center gap-1 touch-target transition-colors ${
-                isActive ? 'text-primary' : 'text-gray-400'
+                isActive
+                  ? 'text-primary'
+                  : 'text-gray-400 dark:text-gray-500'
               }`}
             >
               <Icon size={24} className={isActive ? 'stroke-[2.5]' : 'stroke-2'} />

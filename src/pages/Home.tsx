@@ -140,23 +140,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div className="w-full max-w-md mx-auto px-4 py-3">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex-1">
-              <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-0.5">
+              <div className="mb-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <MapPin size={14} />
                 <span>University of Hertfordshire</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 Hi {user?.profile?.name || 'there'}! 👋
               </h1>
             </div>
             <Link to="/search" className="touch-target">
-              <Search size={22} className="text-gray-900" />
+              <Search size={22} className="text-gray-900 dark:text-white" />
             </Link>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function Home() {
         {/* Hero Banner */}
         <section className="py-4">
           <Link to="/create">
-            <div className="relative h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-primary via-primary-dark to-gray-900">
+            <div className="relative h-48 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary-dark to-gray-900 shadow-card">
               <div className="absolute inset-0 flex flex-col justify-center px-6 text-white">
                 <h2 className="text-2xl md:text-3xl font-bold mb-2">Start Selling</h2>
                 <p className="text-white/90 text-sm mb-4 max-w-xs">List your items for free and connect with students</p>
@@ -187,8 +187,8 @@ export default function Home() {
               onClick={clearFilter}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 !selectedCategory
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               All
@@ -199,8 +199,8 @@ export default function Home() {
                 onClick={() => handleCategorySelect(category.slug)}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category.slug
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
                 {category.name}
@@ -210,24 +210,24 @@ export default function Home() {
         </section>
 
         {/* Filter and Sort Bar */}
-        <section className="py-3 border-b border-gray-100">
+        <section className="border-b border-gray-100 py-3 dark:border-gray-800">
           <div className="flex items-center justify-between">
             <Link
               to="/search"
-              className="flex items-center gap-2 text-sm text-gray-700 font-medium"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               <SlidersHorizontal size={18} />
               Filters
             </Link>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-1.5 text-sm text-gray-700 font-medium">
+              <button className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <span>Price: lowest to high</span>
               </button>
               <button
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                 className="touch-target"
               >
-                <Grid3x3 size={18} className="text-gray-700" />
+                <Grid3x3 size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
             </div>
           </div>
@@ -239,9 +239,9 @@ export default function Home() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">New</h2>
-                <p className="text-xs text-gray-500">You've never seen it before!</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">You've never seen it before!</p>
               </div>
-              <Link to="/search" className="text-sm text-gray-900 font-medium">
+              <Link to="/search" className="text-sm font-medium text-gray-900 dark:text-white">
                 View all
               </Link>
             </div>
@@ -255,12 +255,12 @@ export default function Home() {
                   <div className="absolute top-2 left-2 bg-gray-900 text-white text-xs font-bold px-2 py-1 rounded-md z-10">
                     NEW
                   </div>
-                  <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-2">
+                  <div className="mb-2 aspect-square overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
                     {/* Prefer cloud image_url, fall back to image, then to placeholder */}
                     <NewListingImage listing={listing} />
                   </div>
-                  <h3 className="text-xs font-medium text-gray-900 truncate">{listing.title}</h3>
-                  <p className="text-sm font-bold text-gray-900">£{listing.price}</p>
+                  <h3 className="truncate text-xs font-medium text-gray-900 dark:text-white">{listing.title}</h3>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">£{listing.price}</p>
                 </Link>
               ))}
             </div>
@@ -272,8 +272,8 @@ export default function Home() {
           <section className="py-2">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Recently viewed</h2>
-                <p className="text-xs text-gray-500">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recently viewed</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Jump back to items you&apos;ve looked at.
                 </p>
               </div>
@@ -285,13 +285,13 @@ export default function Home() {
                   to={`/listing/${listing.id}`}
                   className="relative flex-shrink-0 w-32"
                 >
-                  <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-2">
+                  <div className="mb-2 aspect-square overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
                     <NewListingImage listing={listing} />
                   </div>
-                  <h3 className="text-xs font-medium text-gray-900 truncate">
+                  <h3 className="truncate text-xs font-medium text-gray-900 dark:text-white">
                     {listing.title}
                   </h3>
-                  <p className="text-sm font-bold text-gray-900">£{listing.price}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">£{listing.price}</p>
                 </Link>
               ))}
             </div>
@@ -301,8 +301,8 @@ export default function Home() {
         {/* Main Listings Grid */}
         <section className="py-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">All Listings</h2>
-            <Link to="/search" className="text-sm text-gray-900 font-medium">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">All Listings</h2>
+            <Link to="/search" className="text-sm font-medium text-gray-900 dark:text-white">
               View all
             </Link>
           </div>
@@ -310,7 +310,7 @@ export default function Home() {
           {listings.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📦</div>
-              <p className="text-gray-500 mb-4">No listings found</p>
+              <p className="mb-4 text-gray-500 dark:text-gray-400">No listings found</p>
               <Link
                 to="/create"
                 className="inline-block bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors"

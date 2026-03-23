@@ -104,17 +104,17 @@ export default function Search() {
   const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === filters.sortBy)?.label || 'Price: lowest to high';
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-white pb-20 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+      <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div className="w-full max-w-md mx-auto px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
             <Link to="/home" className="touch-target -ml-2">
-              <ArrowLeft size={22} className="text-gray-900" />
+              <ArrowLeft size={22} className="text-gray-900 dark:text-white" />
             </Link>
-            <h1 className="text-xl font-bold text-gray-900">Search</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Search</h1>
             <div className="flex-1" />
-            <SearchIcon size={22} className="text-gray-900" />
+            <SearchIcon size={22} className="text-gray-900 dark:text-white" />
           </div>
 
           {/* Category Chips */}
@@ -123,8 +123,8 @@ export default function Search() {
               onClick={() => setFilters(prev => ({ ...prev, category: '' }))}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 !filters.category
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                  ? 'bg-gray-900 text-white dark:bg-gray-50 dark:text-gray-900'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
               }`}
             >
               All
@@ -135,8 +135,8 @@ export default function Search() {
                 onClick={() => setFilters(prev => ({ ...prev, category: category.slug }))}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                   filters.category === category.slug
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700'
+                    ? 'bg-gray-900 text-white dark:bg-gray-50 dark:text-gray-900'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
                 }`}
               >
                 {category.name}
@@ -147,12 +147,12 @@ export default function Search() {
       </div>
 
       {/* Filter and Sort Bar */}
-      <div className="bg-white border-b border-gray-100 sticky top-[108px] z-10">
+      <div className="sticky top-[108px] z-10 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div className="w-full max-w-md mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowFilters(true)}
-              className="flex items-center gap-2 text-sm text-gray-900 font-medium relative"
+              className="relative flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
             >
               <SlidersHorizontal size={18} />
               Filters
@@ -165,7 +165,7 @@ export default function Search() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSortModal(true)}
-                className="flex items-center gap-1.5 text-sm text-gray-700"
+                className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-200"
               >
                 <span>{currentSortLabel}</span>
               </button>
@@ -174,9 +174,9 @@ export default function Search() {
                 className="touch-target"
               >
                 {viewMode === 'grid' ? (
-                  <Grid3x3 size={18} className="text-gray-700" />
+                  <Grid3x3 size={18} className="text-gray-700 dark:text-gray-200" />
                 ) : (
-                  <List size={18} className="text-gray-700" />
+                  <List size={18} className="text-gray-700 dark:text-gray-200" />
                 )}
               </button>
             </div>
@@ -191,8 +191,8 @@ export default function Search() {
         ) : listings.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🔍</div>
-            <p className="text-gray-500 mb-2">No items found</p>
-            <p className="text-sm text-gray-400">Try adjusting your filters</p>
+            <p className="mb-2 text-gray-500 dark:text-gray-400">No items found</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Try adjusting your filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 pb-4">
@@ -206,12 +206,12 @@ export default function Search() {
       {/* Filters Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowFilters(false)}>
-          <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4">
+          <div className="w-full max-w-md mx-auto overflow-auto rounded-t-3xl max-h-[85vh] bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 border-b border-gray-100 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h2>
                 <button onClick={() => setShowFilters(false)} className="touch-target -mr-2">
-                  <X size={24} className="text-gray-900" />
+                  <X size={24} className="text-gray-900 dark:text-white" />
                 </button>
               </div>
             </div>
@@ -283,11 +283,14 @@ export default function Search() {
               </div>
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 flex gap-3">
-              <button onClick={clearFilters} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-900 font-semibold">
+            <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+              <button
+                onClick={clearFilters}
+                className="flex-1 rounded-xl border-2 border-gray-200 py-3 font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-200"
+              >
                 Discard
               </button>
-              <button onClick={() => setShowFilters(false)} className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold">
+              <button onClick={() => setShowFilters(false)} className="flex-1 rounded-xl bg-primary py-3 font-semibold text-white">
                 Apply
               </button>
             </div>
@@ -298,10 +301,10 @@ export default function Search() {
       {/* Sort Modal */}
       {showSortModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowSortModal(false)}>
-          <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md mx-auto rounded-t-3xl bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Sort by</h2>
+              <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">Sort by</h2>
               <div className="space-y-1">
                 {SORT_OPTIONS.map((option) => (
                   <button
@@ -313,7 +316,7 @@ export default function Search() {
                     className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
                       filters.sortBy === option.value
                         ? 'bg-primary text-white font-semibold'
-                        : 'hover:bg-gray-50 text-gray-700'
+                        : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200'
                     }`}
                   >
                     {option.label}

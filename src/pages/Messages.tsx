@@ -2,9 +2,9 @@
  * Messages page using Stream Chat
  * Premium-style header showing other user's profile + listing
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, Archive, EyeOff, MoreVertical } from 'lucide-react';
 import {
   Chat,
   Channel,
@@ -12,21 +12,394 @@ import {
   MessageList,
   MessageInput,
   ChannelList,
-  ChannelPreviewMessenger,
+  useChannelStateContext,
 } from 'stream-chat-react';
 import { getStreamClient, getStreamChannel } from '@/services/streamChat';
-import { streamAPI } from '@/services/api';
+import { streamAPI, profileAPI, listingsAPI } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
 import type { Listing } from '@/types';
 import 'stream-chat-react/dist/css/v2/index.css';
+
+function QuickReplies() {
+  const { channel } = useChannelStateContext();
+
+  const handleClick = async (text: string) => {
+    if (!channel) return;
+    try {
+      await channel.sendMessage({ text });
+    } catch {
+      // ignore – main input still works
+    }
+  };
+
+  const options = ["I'll be there", 'Okay, thanks', 'Yes, that works'];
+
+  return (
+    <div className="px-3 pb-2">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        {options.map((text) => (
+          <button
+            key={text}
+            type="button"
+            onClick={() => handleClick(text)}
+            className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-3 py-1 text-[11px] text-gray-700 shadow-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InboxPreview({ channel, onDelete, onHide, onArchive }: { 
+  channel: any; 
+  onDelete?: (channel: any) => void;
+  onHide?: (channel: any) => void;
+  onArchive?: (channel: any) => void;
+}) {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { imageSize, fontSize } = useSettingsStore();
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [roleLabel, setRoleLabel] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const members = Object.values(channel.state?.members || {}) as any[];
+  const currentUserId = String(user?.id || '');
+  const otherMember = members.find((m: any) => m.user?.id !== currentUserId) || members[0];
+  const otherUser = otherMember?.user;
+  const otherUserId = otherUser?.id;
+
+  // Fetch profile and determine role from backend API
+  useEffect(() => {
+    if (!otherUserId) return;
+
+    const fetchProfileAndRole = async () => {
+      try {
+        // Extract listing ID from channel ID (format: listing_<listing_id>_<id1>_<id2>)
+        const channelId = channel.id || channel.cid?.split(':')[1] || '';
+        const listingIdMatch = channelId.match(/listing_(\d+)_/);
+        
+        if (listingIdMatch) {
+          const listingId = parseInt(listingIdMatch[1], 10);
+          
+          // Fetch listing to determine seller
+          const listing = await listingsAPI.get(listingId);
+          const sellerId = String(listing.seller?.id || listing.seller);
+          const isCurrentUserSeller = sellerId === currentUserId;
+          
+          // Fetch profile
+          const profile = await profileAPI.get(Number(otherUserId));
+          
+          // Only use profile name if it's a non-empty string (not placeholder)
+          const profileNameValue = profile?.name?.trim();
+          if (profileNameValue && profileNameValue.length > 0) {
+            setProfileName(profileNameValue);
+          } else {
+            // If no profile name, use email from Stream Chat user object
+            setProfileName(null); // Will fall back to email in displayName logic
+          }
+          
+          if (profile?.profile_photo || profile?.avatar_url) {
+            setProfileImage(profile.profile_photo || profile.avatar_url);
+          }
+          
+          // Set role label
+          setRoleLabel(isCurrentUserSeller ? 'Buyer' : 'Seller');
+        } else {
+          // Fallback: just fetch profile without role
+          const profile = await profileAPI.get(Number(otherUserId));
+          
+          // Only use profile name if it's a non-empty string
+          const profileNameValue = profile?.name?.trim();
+          if (profileNameValue && profileNameValue.length > 0) {
+            setProfileName(profileNameValue);
+          } else {
+            setProfileName(null); // Will fall back to email
+          }
+          
+          if (profile?.profile_photo || profile?.avatar_url) {
+            setProfileImage(profile.profile_photo || profile.avatar_url);
+          }
+        }
+      } catch (error) {
+        // If profile fetch fails, fall back to Stream data
+        console.warn('Failed to fetch profile for user', otherUserId, error);
+      }
+    };
+
+    fetchProfileAndRole();
+  }, [otherUserId, channel, currentUserId]);
+
+  // Determine display name: prefer backend profile name (if real), then email, then fallback
+  // Skip Stream's otherUser.name as it might be placeholder like "John Doe"
+  const displayName: string =
+    profileName ||
+    (otherUser?.email as string) ||
+    (otherUser?.id ? `Student ${otherUser.id}` : 'Student');
+
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('') || 'U';
+
+  const avatarImage = profileImage || otherUser?.image;
+
+  const lastMessageText = channel.state?.messages?.length
+    ? channel.state.messages[channel.state.messages.length - 1].text || ''
+    : '';
+
+  const handleClick = () => {
+    if (swipeOffset !== 0) {
+      // If swiped, don't navigate
+      setSwipeOffset(0);
+      return;
+    }
+    const channelId = channel.id || channel.cid?.split(':')[1];
+    if (channelId) {
+      navigate(`/messages?channel=${channelId}`);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    
+    // Only allow horizontal swipe (not vertical scrolling)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault();
+      const maxSwipe = 200; // Max swipe distance
+      const newOffset = Math.max(-maxSwipe, Math.min(0, deltaX));
+      setSwipeOffset(newOffset);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeOffset < -100) {
+      // Swiped enough, show actions
+      setSwipeOffset(-200);
+    } else {
+      // Not enough swipe, snap back
+      setSwipeOffset(0);
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this conversation? This cannot be undone.')) {
+      try {
+        await channel.delete();
+        onDelete?.(channel);
+        setSwipeOffset(0);
+      } catch (error) {
+        console.error('Failed to delete channel', error);
+        alert('Failed to delete conversation. Please try again.');
+      }
+    }
+  };
+
+  const handleHide = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Hide channel by removing user from it (Stream Chat way)
+      await channel.removeMembers([String(user?.id)]);
+      onHide?.(channel);
+      setSwipeOffset(0);
+    } catch (error) {
+      console.error('Failed to hide channel', error);
+      alert('Failed to hide conversation. Please try again.');
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Archive by updating channel data
+      await channel.updatePartial({ archived: true, archived_at: new Date().toISOString() });
+      onArchive?.(channel);
+      setSwipeOffset(0);
+    } catch (error) {
+      console.error('Failed to archive channel', error);
+      alert('Failed to archive conversation. Please try again.');
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden border-b border-gray-50 dark:border-gray-800"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Action buttons (shown when swiped) */}
+      <div className="absolute right-0 top-0 h-full flex items-center bg-red-500">
+        <div className="flex items-center h-full">
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="h-full px-6 bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+            aria-label="Delete"
+          >
+            <Trash2 size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={handleHide}
+            className="h-full px-6 bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+            aria-label="Hide"
+          >
+            <EyeOff size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={handleArchive}
+            className="h-full px-6 bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors"
+            aria-label="Archive"
+          >
+            <Archive size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Main chat item */}
+      <div
+        className="relative flex items-center gap-3 bg-white px-4 py-3 transition-all duration-200 hover:bg-slate-50 dark:bg-gray-900 dark:hover:bg-gray-800/60"
+        style={{ transform: `translateX(${swipeOffset}px)` }}
+      >
+        <button
+          type="button"
+          onClick={handleClick}
+          className="flex-1 flex items-center gap-3 text-left"
+        >
+          <div className={`rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold overflow-hidden ${
+            imageSize === 'small' ? 'w-10 h-10 text-xs' :
+            imageSize === 'large' ? 'w-14 h-14 text-base' :
+            'w-12 h-12 text-sm'
+          }`}>
+            {avatarImage ? (
+              <img src={avatarImage} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-2">
+              <p className={`font-semibold text-gray-900 dark:text-white truncate ${
+                fontSize === 'small' ? 'text-sm' :
+                fontSize === 'large' ? 'text-lg' :
+                'text-base'
+              }`}>{displayName}</p>
+              {roleLabel && (
+                <span className={`font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded whitespace-nowrap ${
+                  fontSize === 'small' ? 'text-[9px]' :
+                  fontSize === 'large' ? 'text-xs' :
+                  'text-[10px]'
+                }`}>
+                  {roleLabel}
+                </span>
+              )}
+            </div>
+            {lastMessageText ? (
+              <p className={`text-gray-500 dark:text-gray-400 truncate ${
+                fontSize === 'small' ? 'text-[10px]' :
+                fontSize === 'large' ? 'text-sm' :
+                'text-[11px]'
+              }`}>{lastMessageText}</p>
+            ) : (
+              <p className={`text-gray-400 dark:text-gray-500 truncate ${
+                fontSize === 'small' ? 'text-[10px]' :
+                fontSize === 'large' ? 'text-sm' :
+                'text-[11px]'
+              }`}>No messages yet</p>
+            )}
+          </div>
+        </button>
+
+        {/* More options menu button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
+          className="rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          aria-label="More options"
+        >
+          <MoreVertical size={18} className="text-gray-500 dark:text-gray-400" />
+        </button>
+
+        {/* Dropdown menu */}
+        {showMenu && (
+          <div className="absolute right-2 top-12 z-50 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={handleHide}
+              className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <EyeOff size={16} />
+              Hide
+            </button>
+            <button
+              type="button"
+              onClick={handleArchive}
+              className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <Archive size={16} />
+              Archive
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Messages() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
+  const { getDarkMode } = useSettingsStore();
   const [client, setClient] = useState<any>(null);
   const [activeChannel, setActiveChannel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +459,7 @@ export default function Messages() {
   };
 
   const currentUserId = user ? String(user.id) : null;
+  const [activeChatProfile, setActiveChatProfile] = useState<{ name?: string; image?: string; role?: 'seller' | 'buyer' } | null>(null);
 
   const otherUser = useMemo(() => {
     if (!activeChannel || !currentUserId) return null;
@@ -98,27 +472,83 @@ export default function Messages() {
     }
   }, [activeChannel, currentUserId]);
 
+  // Determine if current user is seller or buyer, and fetch profile
+  useEffect(() => {
+    if (!otherUser?.id || !activeChannel || !currentUserId) {
+      setActiveChatProfile(null);
+      return;
+    }
+
+    const fetchListingAndProfile = async () => {
+      try {
+        // Extract listing ID from channel ID (format: listing_<listing_id>_<id1>_<id2>)
+        const channelId = activeChannel.id || activeChannel.cid?.split(':')[1] || '';
+        const listingIdMatch = channelId.match(/listing_(\d+)_/);
+        
+        if (listingIdMatch) {
+          const listingId = parseInt(listingIdMatch[1], 10);
+          
+          // Fetch listing to determine seller
+          const listing = await listingsAPI.get(listingId);
+          const sellerId = String(listing.seller?.id || listing.seller);
+          const isCurrentUserSeller = sellerId === currentUserId;
+          
+          // Fetch the other user's profile
+          const profile = await profileAPI.get(Number(otherUser.id));
+          
+          // Only use profile name if it's a non-empty string (not placeholder)
+          const profileNameValue = profile?.name?.trim();
+          
+          setActiveChatProfile({
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+            role: isCurrentUserSeller ? 'buyer' : 'seller', // Other user's role
+          });
+        } else {
+          // Fallback: just fetch profile without role
+          const profile = await profileAPI.get(Number(otherUser.id));
+          const profileNameValue = profile?.name?.trim();
+          
+          setActiveChatProfile({
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to fetch listing/profile for active chat', error);
+        // Fallback: try to get profile without listing
+        try {
+          const profile = await profileAPI.get(Number(otherUser.id));
+          const profileNameValue = profile?.name?.trim();
+          
+          setActiveChatProfile({
+            name: (profileNameValue && profileNameValue.length > 0) ? profileNameValue : undefined,
+            image: profile?.profile_photo || profile?.avatar_url || undefined,
+          });
+        } catch (profileError) {
+          setActiveChatProfile(null);
+        }
+      }
+    };
+
+    fetchListingAndProfile();
+  }, [otherUser?.id, activeChannel, currentUserId]);
+
+  // Use profile name if available, otherwise use email (skip Stream's name as it might be placeholder)
+  const displayName = activeChatProfile?.name || otherUser?.email || 'Student';
+  const displayImage = activeChatProfile?.image || otherUser?.image;
+  const roleLabel = activeChatProfile?.role === 'seller' ? 'Seller' : activeChatProfile?.role === 'buyer' ? 'Buyer' : null;
+
   const otherUserInitials = useMemo(() => {
-    if (!otherUser) return 'U';
-    const name: string = otherUser.name || otherUser.email || '';
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
+    if (!displayName) return 'U';
+    const parts = displayName.trim().split(' ');
     const initials = parts
       .filter(Boolean)
       .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
+      .map((p: string) => p[0]?.toUpperCase())
       .join('');
     return initials || 'U';
-  }, [otherUser]);
-
-  const handleQuickReply = async (text: string) => {
-    if (!activeChannel) return;
-    try {
-      await activeChannel.sendMessage({ text });
-    } catch {
-      // Fail silently – main input is still available
-    }
-  };
+  }, [displayName]);
 
   if (isLoading && !client) {
     return <Loading fullScreen />;
@@ -140,126 +570,145 @@ export default function Messages() {
     );
   }
 
+  const showInbox = !activeChannel;
+  const darkMode = getDarkMode();
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="sticky top-0 bg-slate-50 z-10 pt-2">
-        <div className="w-full max-w-md mx-auto px-4 pb-3">
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Chat with sellers to arrange safe, in-person meetups.
-          </p>
-        </div>
-      </div>
+    <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
+      <div className="w-full max-w-md mx-auto h-[calc(100vh-4.5rem)] flex flex-col">
+        {showInbox ? (
+          <div className="pt-3 px-4 pb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Chat with sellers to arrange safe, in-person meetups.
+            </p>
+          </div>
+        ) : null}
 
-      <div className="w-full max-w-md mx-auto px-3">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <Chat client={client}>
-            <div className="flex flex-col h-[70vh]">
-              <div className="border-b border-gray-100">
-                <ChannelList
-                  filters={{ members: { $in: [String(user?.id)] } }}
-                  sort={{ last_message_at: -1 }}
-                  Preview={ChannelPreviewMessenger}
-                  EmptyStateIndicator={() => (
-                    <div className="flex flex-col items-center justify-center py-12 px-4">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
-                        <MessageCircle size={28} className="text-gray-400" />
-                      </div>
-                      <h2 className="text-base font-bold text-gray-900 mb-1">
-                        No messages yet
-                      </h2>
-                      <p className="text-xs text-gray-500 text-center mb-4">
-                        Start a conversation with a seller from any listing.
-                      </p>
-                      <button
-                        onClick={() => navigate('/home')}
-                        className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-colors"
-                      >
-                        Browse listings
-                      </button>
-                    </div>
-                  )}
-                />
-              </div>
-
-              <Channel channel={activeChannel}>
-                <Window>
-                  {activeChannel && (
-                    <div className="sticky top-0 bg-white border-b border-gray-100 z-20">
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <button
-                          onClick={() => setActiveChannel(null)}
-                          className="touch-target -ml-2"
-                        >
-                          <ArrowLeft size={22} className="text-gray-900" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!otherUser}
-                          onClick={() => {
-                            if (!otherUser) return;
-                            navigate(`/seller/${otherUser.id}`);
+        <div className="flex-1 px-3">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
+            <Chat client={client}>
+              {showInbox ? (
+                <div className="flex-1 flex flex-col">
+                  <div className="border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <ChannelList
+                      filters={{ 
+                        members: { $in: [String(user?.id)] }
+                      }}
+                      sort={{ last_message_at: -1 }}
+                      Preview={(props: any) => (
+                        <InboxPreview
+                          {...props}
+                          onDelete={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel deleted', ch);
                           }}
-                          className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
-                            {otherUser?.image ? (
-                              <img
-                                src={otherUser.image}
-                                alt={otherUser.name || 'Profile'}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              otherUserInitials
-                            )}
+                          onHide={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel hidden', ch);
+                          }}
+                          onArchive={(ch) => {
+                            // Channel will be removed from list automatically
+                            console.log('Channel archived', ch);
+                          }}
+                        />
+                      )}
+                      EmptyStateIndicator={() => (
+                        <div className="flex flex-col items-center justify-center py-12 px-4">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
+                            <MessageCircle size={28} className="text-gray-400 dark:text-gray-500" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h2 className="text-sm font-semibold text-gray-900 truncate">
-                              {otherUser?.name || otherUser?.email || 'Student'}
-                            </h2>
-                            {activeChannel?.data?.listing?.title && (
-                              <p className="text-[11px] text-gray-500 truncate">
-                                {activeChannel.data.listing.title}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-[11px] font-semibold text-primary">
-                            View profile
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col flex-1 bg-slate-50">
-                    <div className="flex-1 px-1 pt-1">
-                      <MessageList />
-                    </div>
-
-                    {/* Quick reply chips */}
-                    <div className="px-3 pb-2">
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {["I'll be there", 'Okay, thanks', 'Yes, that works'].map((text) => (
+                          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+                            No messages yet
+                          </h2>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
+                            Start a conversation with a seller from any listing.
+                          </p>
                           <button
-                            key={text}
-                            type="button"
-                            onClick={() => handleQuickReply(text)}
-                            className="px-3 py-1 rounded-full bg-white border border-gray-200 text-[11px] text-gray-700 shadow-xs hover:bg-gray-50 whitespace-nowrap"
+                            onClick={() => navigate('/home')}
+                            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-colors"
                           >
-                            {text}
+                            Browse listings
                           </button>
-                        ))}
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Channel channel={activeChannel}>
+                  <Window>
+                    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-900">
+                      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-100 dark:border-gray-700">
+                        <div className="px-4 py-3 flex items-center gap-3">
+                          <button
+                            onClick={() => {
+                              setActiveChannel(null);
+                              navigate('/messages', { replace: true });
+                            }}
+                            className="touch-target -ml-2"
+                          >
+                            <ArrowLeft size={22} className="text-gray-900" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!otherUser}
+                            onClick={() => {
+                              if (!otherUser) return;
+                              navigate(`/seller/${otherUser.id}`);
+                            }}
+                            className="flex-1 flex items-center gap-3 text-left disabled:opacity-60"
+                          >
+                            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
+                              {displayImage ? (
+                                <img
+                                  src={displayImage}
+                                  alt={displayName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                otherUserInitials
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-semibold text-gray-900 truncate">
+                                  {displayName}
+                                </h2>
+                                {roleLabel && (
+                                  <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                    {roleLabel}
+                                  </span>
+                                )}
+                              </div>
+                              {activeChannel?.data?.listing?.title && (
+                                <p className="text-[11px] text-gray-500 truncate">
+                                  {activeChannel.data.listing.title}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-primary">
+                              View profile
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 px-1 pt-1">
+                        <MessageList />
+                      </div>
+
+                      <QuickReplies />
+
+                      <div className="border-t border-gray-100 bg-white px-2 pb-2">
+                        <MessageInput focus />
                       </div>
                     </div>
-
-                    <div className="border-t border-gray-100 bg-white px-2 pb-2">
-                      <MessageInput focus />
-                    </div>
-                  </div>
-                </Window>
-              </Channel>
-            </div>
-          </Chat>
+                  </Window>
+                </Channel>
+              )}
+            </Chat>
+          </div>
         </div>
       </div>
 

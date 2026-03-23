@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2 } from 'lucide-react';
+import { Heart, Package, MessageCircle, LogOut, ChevronRight, Bell, Shield, HelpCircle, CheckCircle, AlertCircle, Edit2, Settings } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI, listingsAPI, savedListingsAPI, messagesAPI, premiumAPI } from '@/services/api';
 import BottomNav from '@/components/BottomNav';
@@ -158,18 +158,18 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="border-b border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-950">
         <div className="w-full max-w-md mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
         </div>
       </div>
 
       <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
         {/* Email Verification Banner */}
         {!user.email_verified && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+          <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle size={24} className="text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -214,7 +214,7 @@ export default function Profile() {
 
         {/* Verified Badge */}
         {user.email_verified && (
-          <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-3">
+          <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-3">
             <div className="flex items-center gap-2">
               <CheckCircle size={20} className="text-green-600" />
               <p className="text-sm font-semibold text-green-900">Email Verified ✓</p>
@@ -223,7 +223,7 @@ export default function Profile() {
         )}
 
         {/* User Info Card */}
-        <div className="bg-white rounded-2xl p-6">
+        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-card dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center gap-4 mb-6">
             {user.profile?.avatar || user.profile?.profile_photo ? (
               <img
@@ -237,16 +237,16 @@ export default function Profile() {
               </div>
             )}
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900">{user.profile?.name || 'Student'}</h2>
-              <p className="text-sm text-gray-500">{user.email}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{user.profile?.name || 'Student'}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
               {user.profile?.course && (
-                <p className="text-xs text-gray-400 mt-1">{user.profile.course}</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{user.profile.course}</p>
               )}
             </div>
           </div>
           <button
             onClick={() => navigate('/profile/edit')}
-            className="w-full bg-gray-900 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-semibold text-white dark:bg-white dark:text-gray-900"
           >
             <Edit2 size={18} />
             Edit Profile
@@ -255,123 +255,135 @@ export default function Profile() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl p-4 text-center">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900">
             <Package size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.isLoading ? '–' : stats.totalListings}
             </div>
-            <div className="text-xs text-gray-500">Listings</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Listings</div>
           </div>
-          <div className="bg-white rounded-2xl p-4 text-center">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900">
             <Heart size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.isLoading ? '–' : stats.savedCount}
             </div>
-            <div className="text-xs text-gray-500">Saved</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Saved</div>
           </div>
-          <div className="bg-white rounded-2xl p-4 text-center">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900">
             <MessageCircle size={24} className="text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.isLoading ? '–' : stats.messagesCount}
             </div>
-            <div className="text-xs text-gray-500">Messages</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Messages</div>
           </div>
         </div>
 
         {/* Trust score card (optional analytics) */}
         {stats.trustScore !== null && (
-          <div className="bg-white rounded-2xl p-4 flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center gap-2">
               <Shield size={20} className="text-primary" />
-              <span className="text-sm font-semibold text-gray-900">Trust score</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Trust score</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
               {Math.round(stats.trustScore)}%
             </span>
           </div>
         )}
 
         {/* My Activity */}
-        <div className="bg-white rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="font-bold text-gray-900">My Activity</h3>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+            <h3 className="font-bold text-gray-900 dark:text-white">My Activity</h3>
           </div>
           <button
             onClick={() => navigate('/my-listings')}
-            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+            className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-4 active:bg-gray-50 dark:border-gray-800 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Package size={20} className="text-primary" />
               </div>
-              <span className="font-medium text-gray-900">My Listings</span>
+              <span className="font-medium text-gray-900 dark:text-white">My Listings</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
           <button
             onClick={() => navigate('/saved')}
-            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+            className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-4 active:bg-gray-50 dark:border-gray-800 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Heart size={20} className="text-primary" />
               </div>
-              <span className="font-medium text-gray-900">Saved Items</span>
+              <span className="font-medium text-gray-900 dark:text-white">Saved Items</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
           <button
             onClick={() => navigate('/messages')}
-            className="w-full px-4 py-4 flex items-center justify-between active:bg-gray-50"
+            className="flex w-full items-center justify-between px-4 py-4 active:bg-gray-50 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <MessageCircle size={20} className="text-primary" />
               </div>
-              <span className="font-medium text-gray-900">Messages</span>
+              <span className="font-medium text-gray-900 dark:text-white">Messages</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
         </div>
 
         {/* Settings */}
-        <div className="bg-white rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="font-bold text-gray-900">Settings</h3>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+            <h3 className="font-bold text-gray-900 dark:text-white">Settings</h3>
           </div>
           <button
-            onClick={() => navigate('/notifications')}
-            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+            onClick={() => navigate('/settings')}
+            className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-4 active:bg-gray-50 dark:border-gray-800 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <Bell size={20} className="text-gray-700" />
+                <Settings size={20} className="text-gray-700 dark:text-gray-200" />
               </div>
-              <span className="font-medium text-gray-900">Notifications</span>
+              <span className="font-medium text-gray-900 dark:text-white">Appearance & Settings</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+          <button
+            onClick={() => navigate('/notifications')}
+            className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-4 active:bg-gray-50 dark:border-gray-800 dark:active:bg-gray-800/40"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <Bell size={20} className="text-gray-700 dark:text-gray-200" />
+              </div>
+              <span className="font-medium text-gray-900 dark:text-white">Notifications</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
           <button
             onClick={() => navigate('/privacy')}
-            className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-50 active:bg-gray-50"
+            className="flex w-full items-center justify-between border-b border-gray-50 px-4 py-4 active:bg-gray-50 dark:border-gray-800 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <Shield size={20} className="text-gray-700" />
+                <Shield size={20} className="text-gray-700 dark:text-gray-200" />
               </div>
-              <span className="font-medium text-gray-900">Privacy Policy</span>
+              <span className="font-medium text-gray-900 dark:text-white">Privacy Policy</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
           <button
             onClick={() => navigate('/terms')}
-            className="w-full px-4 py-4 flex items-center justify-between active:bg-gray-50"
+            className="flex w-full items-center justify-between px-4 py-4 active:bg-gray-50 dark:active:bg-gray-800/40"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <HelpCircle size={20} className="text-gray-700" />
+                <HelpCircle size={20} className="text-gray-700 dark:text-gray-200" />
               </div>
-              <span className="font-medium text-gray-900">Terms of Service</span>
+              <span className="font-medium text-gray-900 dark:text-white">Terms of Service</span>
             </div>
             <ChevronRight size={20} className="text-gray-400" />
           </button>
@@ -380,7 +392,7 @@ export default function Profile() {
         {/* Logout Button */}
         <button
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full bg-white text-red-600 font-semibold py-4 rounded-2xl border border-red-200 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white py-4 font-semibold text-red-600 dark:border-red-900/40 dark:bg-gray-900"
         >
           <LogOut size={20} />
           Log Out
@@ -390,9 +402,9 @@ export default function Profile() {
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowLogoutConfirm(false)}>
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Log Out</h2>
-            <p className="text-gray-600 mb-6">Are you sure you want to log out?</p>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">Log Out</h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-300">Are you sure you want to log out?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
