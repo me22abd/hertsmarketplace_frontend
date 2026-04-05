@@ -22,6 +22,7 @@ import BottomNav from '@/components/BottomNav';
 import Loading from '@/components/Loading';
 import type { Listing } from '@/types';
 import 'stream-chat-react/dist/css/v2/index.css';
+import { unlockWebAudioFromUserGesture } from '@/utils/audioUnlock';
 
 function QuickReplies() {
   const { channel } = useChannelStateContext();
@@ -588,6 +589,10 @@ export default function Messages() {
         <div className="flex-1 px-3">
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
             <Chat client={client}>
+              <div
+                className="flex-1 flex flex-col min-h-0 h-full"
+                onPointerDownCapture={() => unlockWebAudioFromUserGesture()}
+              >
               {showInbox ? (
                 <div className="flex-1 flex flex-col">
                   <div className="border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -707,6 +712,7 @@ export default function Messages() {
                   </Window>
                 </Channel>
               )}
+              </div>
             </Chat>
           </div>
         </div>

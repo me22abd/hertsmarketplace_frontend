@@ -18,16 +18,16 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-white safe-area-inset">
+    <div className="min-h-screen bg-[#F9FAFB] safe-area-inset">
       {/* Header - Mobile Optimized */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 safe-area-top"
+        className="border-b border-gray-100/80 bg-[#F9FAFB]/95 backdrop-blur-md sticky top-0 z-50 safe-area-top"
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-6 py-4 sm:py-4 flex items-center justify-between">
-          <Link to="/" className="group">
+          <Link to="/" className="group flex items-center" aria-label="HertsMarketplace home">
             <Logo size="md" />
           </Link>
           <div className="flex items-center gap-3 sm:gap-6">
@@ -461,7 +461,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             {/* Logo and Brand */}
             <div className="md:col-span-1">
-              <Link to="/" className="flex items-center gap-3 mb-4 group">
+              <Link to="/" className="flex items-center mb-4 group" aria-label="HertsMarketplace home">
                 <Logo size="sm" />
               </Link>
               <p className="text-sm text-gray-600">

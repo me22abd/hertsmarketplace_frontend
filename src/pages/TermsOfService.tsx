@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function TermsOfService() {
   return (
@@ -7,14 +8,8 @@ export default function TermsOfService() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center group-hover:bg-primary-dark transition-colors">
-              <ShoppingBag className="text-white" size={20} />
-            </div>
-            <div className="text-xl font-bold">
-              <span className="text-primary">Herts</span>
-              <span className="text-gray-800">Marketplace</span>
-            </div>
+          <Link to="/" className="flex items-center touch-target group opacity-100 transition-opacity hover:opacity-90">
+            <Logo size="md" />
           </Link>
           <Link
             to="/"

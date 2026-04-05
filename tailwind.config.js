@@ -9,16 +9,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#9A46CF',
-          dark: '#7B37A6',
-          light: '#B366E0',
+          DEFAULT: '#7C3AED',
+          dark: '#6D28D9',
+          light: '#8B5CF6',
         },
         text: {
           primary: '#0F172A',
           secondary: '#64748B',
         },
         bg: {
-          DEFAULT: '#F1F5F9',
+          DEFAULT: '#F9FAFB',
           white: '#FFFFFF',
         },
         status: {
@@ -32,7 +32,7 @@ export default {
       },
       boxShadow: {
         card: '0 2px 8px rgba(0, 0, 0, 0.08)',
-        'card-hover': '0 4px 12px rgba(154, 70, 207, 0.15)',
+        'card-hover': '0 4px 12px rgba(124, 58, 237, 0.15)',
       },
     },
   },
