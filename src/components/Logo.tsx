@@ -10,16 +10,16 @@ interface LogoProps {
 
 const sizeClasses: Record<LogoSize, { icon: string; full: string }> = {
   sm: {
-    icon: 'h-8 w-auto max-h-8',
-    full: 'h-8 w-auto max-h-8 sm:h-9 sm:max-h-9 max-w-[200px] sm:max-w-[220px]',
+    icon: 'h-10 w-auto max-h-10 sm:h-11 sm:max-h-11',
+    full: 'h-9 w-auto max-h-9 sm:h-10 sm:max-h-10 md:h-11 md:max-h-11 max-w-[220px] sm:max-w-[260px] md:max-w-[280px]',
   },
   md: {
-    icon: 'h-9 w-auto max-h-9 sm:h-10 sm:max-h-10',
-    full: 'h-9 w-auto max-h-9 sm:h-10 sm:max-h-10 md:h-11 md:max-h-11 max-w-[240px] sm:max-w-[280px] md:max-w-[300px]',
+    icon: 'h-12 w-auto max-h-12 sm:h-14 sm:max-h-14',
+    full: 'h-11 w-auto max-h-11 sm:h-12 sm:max-h-12 md:h-14 md:max-h-14 lg:h-[4.25rem] lg:max-h-[4.25rem] max-w-[min(92vw,320px)] sm:max-w-[380px] md:max-w-[440px] lg:max-w-[480px]',
   },
   lg: {
-    icon: 'h-10 w-auto max-h-10 sm:h-11 sm:max-h-11',
-    full: 'h-10 w-auto max-h-10 sm:h-12 sm:max-h-12 md:h-14 md:max-h-14 max-w-[260px] sm:max-w-[300px] md:max-w-[340px]',
+    icon: 'h-14 w-auto max-h-14 sm:h-16 sm:max-h-16',
+    full: 'h-12 w-auto max-h-12 sm:h-14 sm:max-h-14 md:h-16 md:max-h-16 lg:h-[4.5rem] lg:max-h-[4.5rem] max-w-[min(92vw,360px)] sm:max-w-[420px] md:max-w-[500px] lg:max-w-[520px]',
   },
 };
 
