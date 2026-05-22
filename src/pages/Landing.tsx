@@ -26,9 +26,9 @@ export default function Landing() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="border-b border-gray-100/80 bg-[#F9FAFB]/95 backdrop-blur-md sticky top-0 z-50 safe-area-top"
       >
-        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between min-h-[4.5rem] sm:min-h-[5rem]">
           <Link to="/" className="group flex items-center" aria-label="HertsMarketplace home">
-            <Logo size="md" />
+            <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-3 sm:gap-6">
             <Link to="/login" className="text-sm sm:text-base text-gray-600 hover:text-primary font-medium transition-colors">
