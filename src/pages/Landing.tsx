@@ -18,7 +18,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] safe-area-inset">
+    <div className="min-h-screen w-full bg-[#F9FAFB] safe-area-inset">
       {/* Header - Mobile Optimized */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
@@ -26,7 +26,7 @@ export default function Landing() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="border-b border-gray-100/80 bg-[#F9FAFB]/95 backdrop-blur-md sticky top-0 z-50 safe-area-top"
       >
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 py-4 sm:py-4 flex items-center justify-between">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link to="/" className="group flex items-center" aria-label="HertsMarketplace home">
             <Logo size="md" />
           </Link>
@@ -43,11 +43,11 @@ export default function Landing() {
         </div>
       </motion.header>
 
-      {/* Hero Section - Mobile Optimized with Premium Spacing */}
-      <section className="max-w-7xl mx-auto px-5 sm:px-6 py-12 sm:py-16 md:py-28 overflow-hidden safe-area-inset">
-        <div className="grid md:grid-cols-2 gap-12 sm:gap-12 items-center">
+      {/* Hero Section */}
+      <section className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 xl:py-28 overflow-hidden safe-area-inset">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20 items-center">
           {/* Left side - Main content */}
-          <div className="order-2 md:order-1">
+          <div className="order-2 lg:order-1 min-w-0 max-w-2xl lg:max-w-none">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -63,9 +63,11 @@ export default function Landing() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6 sm:mb-6 md:mb-6 leading-[1.2] sm:leading-[1.1] tracking-tight"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight"
             >
-              Buy and Sell <span className="text-primary block mt-2 sm:mt-1">Anything</span> <span className="block mt-2 sm:mt-1">on Campus</span>
+              Buy and Sell{' '}
+              <span className="text-primary">Anything</span>{' '}
+              <span className="block sm:inline sm:mt-0 mt-2">on Campus</span>
             </motion.h1>
 
             <motion.p
@@ -82,20 +84,20 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               onSubmit={handleGetStarted}
-              className="space-y-4 sm:space-y-4 mb-10 sm:mb-8 md:mb-8 pb-4 sm:pb-0"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-10 sm:mb-8 md:mb-8 max-w-xl lg:max-w-2xl"
             >
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your @herts.ac.uk email"
-                className="w-full px-5 py-4 sm:px-6 sm:py-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base sm:text-lg transition-all"
+                className="flex-1 min-w-0 w-full px-5 py-4 sm:px-6 sm:py-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base sm:text-lg transition-all"
               />
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-primary hover:bg-primary-dark text-white px-6 py-4 sm:px-8 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg hover:shadow-xl group touch-target mt-2 sm:mt-0"
+                className="w-full sm:w-auto shrink-0 bg-primary hover:bg-primary-dark text-white px-6 py-4 sm:px-8 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg hover:shadow-xl group touch-target whitespace-nowrap"
               >
                 <span className="inline-flex items-center gap-2">
                   Get started
@@ -128,12 +130,12 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Right side - SaaS Style Illustration - Mobile Optimized */}
+          {/* Right side - Illustration */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative flex items-center justify-center order-1 md:order-2 mb-8 sm:mb-6 md:mb-0"
+            className="relative flex items-center justify-center order-1 lg:order-2 mb-8 lg:mb-0 w-full"
           >
             {/* Background accent */}
             <div className="absolute inset-0 -z-10">
@@ -144,7 +146,7 @@ export default function Landing() {
             <motion.div
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3 }}
-              className="relative w-full max-w-md sm:max-w-2xl"
+              className="relative w-full max-w-sm sm:max-w-md lg:max-w-xl xl:max-w-2xl mx-auto"
             >
               <img
                 src="/3d-students-illustration.png"
@@ -182,7 +184,7 @@ export default function Landing() {
 
       {/* How it works */}
       <section className="bg-white py-16 sm:py-16 md:py-28">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -194,7 +196,7 @@ export default function Landing() {
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">Get anything and everything you need for your campus life in three simple steps</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 sm:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
             {[
               { icon: Search, title: "Browse & Search", desc: "Find textbooks, electronics, supplies, and more by searching our vast student marketplace.", delay: 0 },
               { icon: ShoppingCart, title: "Add to Cart", desc: "Connect directly with student sellers and arrange deals for the best price on campus.", delay: 0.1 },
@@ -225,7 +227,7 @@ export default function Landing() {
 
       {/* What students are buying */}
       <section className="bg-gray-50 py-16 sm:py-16 md:py-28">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -237,7 +239,7 @@ export default function Landing() {
             <p className="text-base sm:text-lg md:text-xl text-gray-600">Popular items across all campus categories</p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               { emoji: "📚", icon: "📖", title: "Textbooks", desc: "Buy or sell used books and rent digital versions", delay: 0 },
               { emoji: "💻", icon: "💻", title: "Electronics", desc: "Laptops, tablets, and gadgets from fellow students", delay: 0.1 },
@@ -277,7 +279,7 @@ export default function Landing() {
 
       {/* Why students choose */}
       <section className="bg-white py-16 sm:py-16 md:py-28">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -289,7 +291,7 @@ export default function Landing() {
             <p className="text-base sm:text-lg md:text-xl text-gray-600 px-4">Built by students, for students. We understand what you need.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 sm:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
             {[
               { icon: Smartphone, title: "Easy to Use", desc: "Simple and intuitive interface designed for students", delay: 0 },
               { icon: GraduationCap, title: "Campus Community", desc: "Connect with verified students from your campus", delay: 0.1 },
@@ -320,7 +322,7 @@ export default function Landing() {
 
       {/* Testimonials */}
       <section className="bg-gray-50 py-16 sm:py-16 md:py-28">
-        <div className="max-w-4xl mx-auto px-5 sm:px-6">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -371,7 +373,7 @@ export default function Landing() {
 
       {/* Final CTA - Friendly & Minimal */}
       <section className="bg-gradient-to-b from-white to-primary/5 py-16 sm:py-16 md:py-32 safe-area-bottom">
-        <div className="max-w-4xl mx-auto px-5 sm:px-6 text-center">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Friendly Mascot Illustration */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -457,8 +459,8 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-12 sm:py-12 md:py-16 safe-area-bottom">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+        <div className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {/* Logo and Brand */}
             <div className="md:col-span-1">
               <Link to="/" className="flex items-center mb-4 group" aria-label="HertsMarketplace home">

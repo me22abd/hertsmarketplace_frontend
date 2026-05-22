@@ -576,7 +576,7 @@ export default function Messages() {
 
   return (
     <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-900' : 'bg-slate-50'}`}>
-      <div className="w-full max-w-md mx-auto h-[calc(100vh-4.5rem)] flex flex-col">
+      <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto h-[calc(100vh-4.5rem)] flex flex-col px-4 sm:px-6 lg:px-8">
         {showInbox ? (
           <div className="pt-3 px-4 pb-2">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
@@ -586,7 +586,7 @@ export default function Messages() {
           </div>
         ) : null}
 
-        <div className="flex-1 px-3">
+        <div className="flex-1 px-0 sm:px-0">
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
             <Chat client={client}>
               <div

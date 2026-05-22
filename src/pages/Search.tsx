@@ -107,7 +107,7 @@ export default function Search() {
     <div className="min-h-screen bg-white pb-20 dark:bg-gray-950">
       {/* Header */}
       <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
-        <div className="w-full max-w-md mx-auto px-4 py-3">
+        <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3 mb-3">
             <Link to="/home" className="touch-target -ml-2">
               <ArrowLeft size={22} className="text-gray-900 dark:text-white" />
@@ -148,7 +148,7 @@ export default function Search() {
 
       {/* Filter and Sort Bar */}
       <div className="sticky top-[108px] z-10 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
-        <div className="w-full max-w-md mx-auto px-4 py-3">
+        <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowFilters(true)}
@@ -185,7 +185,7 @@ export default function Search() {
       </div>
 
       {/* Results */}
-      <div className="w-full max-w-md mx-auto px-4 pt-4">
+      <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         {isLoading ? (
           <Loading />
         ) : listings.length === 0 ? (
@@ -206,7 +206,7 @@ export default function Search() {
       {/* Filters Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowFilters(false)}>
-          <div className="w-full max-w-md mx-auto overflow-auto rounded-t-3xl max-h-[85vh] bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto overflow-auto rounded-t-3xl max-h-[85vh] bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 border-b border-gray-100 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h2>
@@ -301,7 +301,7 @@ export default function Search() {
       {/* Sort Modal */}
       {showSortModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowSortModal(false)}>
-          <div className="w-full max-w-md mx-auto rounded-t-3xl bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto rounded-t-3xl bg-white dark:bg-gray-950" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
               <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">Sort by</h2>

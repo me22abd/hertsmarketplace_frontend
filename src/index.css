@@ -22,7 +22,7 @@
   }
 
   #root {
-    @apply min-h-screen flex justify-center;
+    @apply min-h-screen;
     width: 100%;
     max-width: 100%;
   }

@@ -143,7 +143,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-950">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
-        <div className="w-full max-w-md mx-auto px-4 py-3">
+        <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex-1">
@@ -162,7 +162,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="w-full max-w-md mx-auto px-4">
+      <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Banner */}
         <section className="py-4">
           <Link to="/create">
